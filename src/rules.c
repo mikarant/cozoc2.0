@@ -69,6 +69,14 @@ Rules new_rules (void) {
                            TARGET_FIELD_VORTICITY),
                        .recipe = compute_omega_component},
 
+            [TARGET_FIELD_OMEGA_F] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_FRICTION,
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_VORTICITY),
+                   .recipe = compute_omega_component},
+
             [TARGET_FIELD_MU_INV] =
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_one_over_dry_air_mass_column},
@@ -211,6 +219,12 @@ static void compute_omega_component (
     case TARGET_FIELD_OMEGA_Q: {
         KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_Q, ctx);
         KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q]);
+        // KSPGetSolution (ctx->ksp, &x);
+        break;
+    }
+    case TARGET_FIELD_OMEGA_F: {
+        KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_F, ctx);
+        KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]);
         // KSPGetSolution (ctx->ksp, &x);
         break;
     }
