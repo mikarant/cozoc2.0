@@ -61,6 +61,14 @@ Rules new_rules (void) {
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_horizontal_wind_etc},
 
+            [TARGET_FIELD_OMEGA_T] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_TEMPERATURE,
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_VORTICITY),
+                   .recipe = compute_omega_component},
+
             [TARGET_FIELD_OMEGA_Q] =
                 (Rule){.prerequisites = new_target_list (
                            TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED,
@@ -212,6 +220,12 @@ static void compute_omega_component (
     KSPSetComputeOperators (ctx->ksp, omega_compute_operator, ctx);
 
     switch (id) {
+    case TARGET_FIELD_OMEGA_T: {
+        KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_T, ctx);
+        KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_T]);
+        // KSPGetSolution (ctx->ksp, &x);
+        break;
+    }
     case TARGET_FIELD_OMEGA_Q: {
         KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_Q, ctx);
         KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q]);

@@ -99,8 +99,6 @@ Context new_context (Options const options, Files const files) {
     ctx.hy = 100000.0;
     info("Grid spacings are hard-wired");
 
-//    file_read_attribute (ncid, "DX", &ctx.hx);
-//    file_read_attribute (ncid, "DY", &ctx.hy);
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);

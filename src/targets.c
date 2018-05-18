@@ -71,6 +71,19 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                               .vec = ctx->Horizontal_wind},
                              .time = options.first - 1},
 
+                [TARGET_FIELD_OMEGA_T] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = true,
+                        .name        = "cozoc_ome_t",
+                        .description = "Omega due to temperature advection",
+                        .units       = "Pa s-1",
+                        .vec =
+                        ctx->omega[GENERALIZED_OMEGA_COMPONENT_T]},
+                    .time = options.first - 1},
+
                 [TARGET_FIELD_OMEGA_Q] =
                     (Target){
                         .type = TARGET_TYPE_FIELD,
