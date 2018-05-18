@@ -96,11 +96,15 @@ Context new_context (Options const options, Files const files) {
     }
 
     /* Grid spacings */
-    file_read_attribute (ncid, "DX", &ctx.hx);
-    file_read_attribute (ncid, "DY", &ctx.hy);
+    ctx.hx = 100000.0;
+    ctx.hy = 100000.0;
+    info("Grid spacings are hard-wired");
+
+//    file_read_attribute (ncid, "DX", &ctx.hx);
+//    file_read_attribute (ncid, "DY", &ctx.hy);
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
-    file_read_int_attribute (ncid, "CU_PHYSICS", &ctx.cu_physics);
+    //    file_read_int_attribute (ncid, "CU_PHYSICS", &ctx.cu_physics);
 
     ctx.first = max_of_size_t (0, options.first);
     ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
@@ -130,16 +134,16 @@ int temperature (
 
     if (step == first) {
         if (first == 0) {
-            file_read_3d (ncid, step, "TT", T);
-            file_read_3d (ncid, step + 1, "TT", Tnext);
+            file_read_3d (ncid, step, "T", T);
+            file_read_3d (ncid, step + 1, "T", Tnext);
 
             VecCopy (T, Ttend);
             VecAXPY (Ttend, -1.0, Tnext);
             VecScale (Ttend, -1.0 / (double)(t[step + 1] - t[step]));
         } else {
-            file_read_3d (ncid, step - 1, "TT", Tprev);
-            file_read_3d (ncid, step, "TT", T);
-            file_read_3d (ncid, step + 1, "TT", Tnext);
+            file_read_3d (ncid, step - 1, "T", Tprev);
+            file_read_3d (ncid, step, "T", T);
+            file_read_3d (ncid, step + 1, "T", Tnext);
 
             VecCopy (Tprev, Ttend);
             VecAXPY (Ttend, -1.0, Tnext);
@@ -156,7 +160,7 @@ int temperature (
         } else {
             VecCopy (T, Tprev);
             VecCopy (Tnext, T);
-            file_read_3d (ncid, step + 1, "TT", Tnext);
+            file_read_3d (ncid, step + 1, "T", Tnext);
 
             VecCopy (Tprev, Ttend);
             VecAXPY (Ttend, -1.0, Tnext);
@@ -327,7 +331,7 @@ static int horizontal_wind_and_vorticity (
     const int ncid, const int step, DM da, DM da2, size_t my, PetscScalar hx,
     PetscScalar hy, Vec tmpvec, Vec V, Vec zeta) {
     for (int i = 0; i < 2; i++) {
-        char name[2][3] = {"UU", "VV"};
+        char name[2][3] = {"U", "V"};
         file_read_3d (ncid, step, name[i], tmpvec);
         VecStrideScatter (tmpvec, i, V, INSERT_VALUES);
     }
@@ -440,55 +444,7 @@ int diabatic_heating (Context *ctx, const int ncid, const int step) {
     PetscInt      zs, ys, xs, zm, ym, xm;
     PetscScalar **ma, ***qa;
 
-    DMGetGlobalVector (da, &tmp3d);
-
-    switch (cu_physics) {
-    case 1:
-        file_read_3d (ncid, step, "RTHCUTEN", Q);
-        file_read_3d (ncid, step, "RTHRATEN", tmp3d);
-        VecAXPY (Q, (PetscScalar)1.0, tmp3d);
-        file_read_3d (ncid, step, "RTHBLTEN", tmp3d);
-        VecAXPY (Q, (PetscScalar)1.0, tmp3d);
-        break;
-
-    default:
-        printf ("Some sensible error here");
-    }
-
-    DMDAVecGetArrayRead (daxy, ctx->One_over_dry_air_mass_column, &ma);
-    DMDAVecGetArray (da, Q, &qa);
-
-    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
-
-    for (int k = zs; k < zs + zm; k++) {
-        for (int j = ys; j < ys + ym; j++) {
-            for (int i = xs; i < xs + xm; i++)
-                qa[k][j][i] *= ma[j][i];
-        }
-    }
-
-    DMDAVecRestoreArray (da, Q, &qa);
-    DMDAVecRestoreArrayRead (daxy, ctx->One_over_dry_air_mass_column, &ma);
-
-    file_read_3d (ncid, step, "H_DIABATIC", tmp3d);
-    VecAXPY (Q, (PetscScalar)1.0, tmp3d);
-
-    DMDAVecGetArray (da, Q, &qa);
-
-    info ("ALEV: ");
-    for (int k = zs; k < zs + zm; k++) {
-        PetscScalar alev = pow (p[k] / 100000.0, r / cp);
-        info ("%g, ", alev);
-
-        for (int j = ys; j < ys + ym; j++) {
-            for (int i = xs; i < xs + xm; i++)
-                qa[k][j][i] *= alev;
-        }
-    }
-    info ("\n");
-    DMDAVecRestoreArray (da, Q, &qa);
-
-    DMRestoreGlobalVector (da, &tmp3d);
+    file_read_3d (ncid, step, "Q", Q);
 
     return (0);
 }
@@ -506,38 +462,10 @@ int friction (Context *ctx, const int ncid, const int step) {
 
     DMGetGlobalVector (da, &tmp3d);
 
-    switch (cu_physics) {
-    case 1:
-        file_read_3d (ncid, step, "RUCUTEN", tmp3d);
-        VecStrideScatter (tmp3d, 0, F, INSERT_VALUES);
-        file_read_3d (ncid, step, "RUBLTEN", tmp3d);
-        VecStrideScatter (tmp3d, 0, F, ADD_VALUES);
-        file_read_3d (ncid, step, "RVCUTEN", tmp3d);
-        VecStrideScatter (tmp3d, 1, F, INSERT_VALUES);
-        file_read_3d (ncid, step, "RVBLTEN", tmp3d);
-        VecStrideScatter (tmp3d, 1, F, ADD_VALUES);
-        break;
-
-    default:
-        printf ("Some sensible error here");
-    }
-
-    DMDAVecGetArrayRead (daxy, ctx->One_over_dry_air_mass_column, &ma);
-    DMDAVecGetArrayDOF (da2, F, &fa);
-
-    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
-
-    for (int k = zs; k < zs + zm; k++) {
-        for (int j = ys; j < ys + ym; j++) {
-            for (int i = xs; i < xs + xm; i++) {
-                fa[k][j][i][0] *= ma[j][i];
-                fa[k][j][i][1] *= ma[j][i];
-            }
-        }
-    }
-
-    DMDAVecRestoreArrayDOF (da2, F, &fa);
-    DMDAVecRestoreArrayRead (daxy, ctx->One_over_dry_air_mass_column, &ma);
+    file_read_3d (ncid, step, "FU", tmp3d);
+    VecStrideScatter (tmp3d, 0, F, INSERT_VALUES);
+    file_read_3d (ncid, step, "FV", tmp3d);
+    VecStrideScatter (tmp3d, 1, F, INSERT_VALUES);
 
     DMRestoreGlobalVector (da, &tmp3d);
 

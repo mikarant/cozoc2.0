@@ -240,7 +240,7 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
 
     Context*    ctx = (Context*) ctx_p;
     DM          da  = ctx->da;
-    Vec         Qatt   = ctx->Diabatic_heating_attennuated;
+    Vec         Qatt   = ctx->Diabatic_heating;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
     PetscScalar hz  = ctx->hz;
