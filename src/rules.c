@@ -20,8 +20,8 @@ static void
 compute_horizontal_wind_etc (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_omega_component (TARGET, Targets *, const Rules *, Context *);
-static void compute_one_over_dry_air_mass_column (
-    TARGET, Targets *, const Rules *, Context *);
+//static void compute_one_over_dry_air_mass_column (
+//    TARGET, Targets *, const Rules *, Context *);
 static void
 compute_temperature_and_tendency (TARGET, Targets *, const Rules *, Context *);
 static void
@@ -36,7 +36,7 @@ static void read_field_3d (TARGET, Targets *, const Rules *, Context *);
 Rules new_rules (void) {
     Rules rules = {{
             [TARGET_FIELD_DIABATIC_HEATING] =
-                (Rule){.prerequisites = new_target_list (TARGET_FIELD_MU_INV),
+                (Rule){.prerequisites = 0,
                        .recipe        = compute_diabatic_heating},
 
             [TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED] =
@@ -51,7 +51,7 @@ Rules new_rules (void) {
                        .recipe = compute_diabatic_heating_forcing},
 
             [TARGET_FIELD_FRICTION] =
-                (Rule){.prerequisites = new_target_list (TARGET_FIELD_MU_INV),
+                (Rule){.prerequisites = 0,
                        .recipe        = compute_friction},
 
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
@@ -76,10 +76,6 @@ Rules new_rules (void) {
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
-
-            [TARGET_FIELD_MU_INV] =
-                (Rule){.prerequisites = 0,
-                       .recipe        = compute_one_over_dry_air_mass_column},
 
             [TARGET_FIELD_TEMPERATURE] =
                 (Rule){.prerequisites = 0,
@@ -257,10 +253,10 @@ static void compute_temperature_and_tendency (
     }
 }
 
-static void compute_one_over_dry_air_mass_column (
-    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    one_over_dry_air_mass_column (ctx->ncid, targets->target[id].time, ctx);
-}
+//static void compute_one_over_dry_air_mass_column (
+//    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+//    one_over_dry_air_mass_column (ctx->ncid, targets->target[id].time, ctx);
+//}
 
 static void compute_sigma_parameter (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {

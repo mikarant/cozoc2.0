@@ -97,18 +97,6 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]},
                     .time = options.first - 1},
 
-                [TARGET_FIELD_MU_INV] =
-                    (Target){
-                        .type = TARGET_TYPE_FIELD,
-                        .field =
-                            (Field){.write = false,
-                                    .name  = "mu_inv",
-                                    .description =
-                                        "One over dry air mass column",
-                                    .units = 0,
-                                    .vec   = ctx->One_over_dry_air_mass_column},
-                        .time = options.first - 1},
-
                 [TARGET_FIELD_SURFACE_ATTENNUATION] =
                     (Target){
                         .type = TARGET_TYPE_FIELD,
