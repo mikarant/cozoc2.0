@@ -416,15 +416,7 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
 
 int diabatic_heating (Context *ctx, const int ncid, const int step) {
 
-    DM            da         = ctx->da;
-    DM            daxy       = ctx->daxy;
     Vec           Q          = ctx->Diabatic_heating;
-    PetscScalar * p          = ctx->Pressure;
-    const double  r          = Specific_gas_constant_of_dry_air;
-    const double  cp         = Specific_heat_of_dry_air;
-    Vec           tmp3d;
-    PetscInt      zs, ys, xs, zm, ym, xm;
-    PetscScalar **ma, ***qa;
 
     file_read_3d (ncid, step, "Q", Q);
 
@@ -434,12 +426,8 @@ int diabatic_heating (Context *ctx, const int ncid, const int step) {
 int friction (Context *ctx, const int ncid, const int step) {
 
     DM            da         = ctx->da;
-    DM            da2        = ctx->da2;
-    DM            daxy       = ctx->daxy;
     Vec           F          = ctx->Friction;
     Vec           tmp3d;
-    PetscInt      zs, ys, xs, zm, ym, xm;
-    PetscScalar **ma, ****fa;
 
     DMGetGlobalVector (da, &tmp3d);
 
