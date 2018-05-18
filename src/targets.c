@@ -110,6 +110,19 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]},
                     .time = options.first - 1},
 
+                [TARGET_FIELD_OMEGA_A] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = true,
+                        .name        = "cozoc_ome_a",
+                        .description = "Omega due to imbalance term",
+                        .units       = "Pa s-1",
+                        .vec =
+                        ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]},
+                    .time = options.first - 1},
+
                 [TARGET_FIELD_SURFACE_ATTENNUATION] =
                     (Target){
                         .type = TARGET_TYPE_FIELD,

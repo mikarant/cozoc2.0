@@ -85,6 +85,14 @@ Rules new_rules (void) {
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
 
+            [TARGET_FIELD_OMEGA_A] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_TEMPERATURE_TENDENCY,
+                    TARGET_FIELD_VORTICITY_TENDENCY,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_VORTICITY),
+                   .recipe = compute_omega_component},
+
             [TARGET_FIELD_TEMPERATURE] =
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_temperature_and_tendency},
@@ -235,6 +243,12 @@ static void compute_omega_component (
     case TARGET_FIELD_OMEGA_F: {
         KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_F, ctx);
         KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]);
+        // KSPGetSolution (ctx->ksp, &x);
+        break;
+    }
+    case TARGET_FIELD_OMEGA_A: {
+        KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_A, ctx);
+        KSPSolve (ctx->ksp, 0, ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]);
         // KSPGetSolution (ctx->ksp, &x);
         break;
     }
