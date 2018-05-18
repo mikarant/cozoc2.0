@@ -418,7 +418,6 @@ int diabatic_heating (Context *ctx, const int ncid, const int step) {
 
     DM            da         = ctx->da;
     DM            daxy       = ctx->daxy;
-    int           cu_physics = ctx->cu_physics;
     Vec           Q          = ctx->Diabatic_heating;
     PetscScalar * p          = ctx->Pressure;
     const double  r          = Specific_gas_constant_of_dry_air;
@@ -437,7 +436,6 @@ int friction (Context *ctx, const int ncid, const int step) {
     DM            da         = ctx->da;
     DM            da2        = ctx->da2;
     DM            daxy       = ctx->daxy;
-    int           cu_physics = ctx->cu_physics;
     Vec           F          = ctx->Friction;
     Vec           tmp3d;
     PetscInt      zs, ys, xs, zm, ym, xm;
