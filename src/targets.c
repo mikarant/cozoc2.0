@@ -43,6 +43,18 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                     .vec   = ctx->Diabatic_heating_forcing},
                         .time = options.first - 1},
 
+                [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){.write = false,
+                            .name  = "Qtend",
+                            .description =
+                            "Diabatic heating from accumulated field",
+                            .units = 0,
+                            .vec   = ctx->Diabatic_heating_tendency},
+                    .time = options.first - 1},
+
                 [TARGET_FIELD_FRICTION] =
                     (Target){.type  = TARGET_TYPE_FIELD,
                              .field = (Field){.write       = false,

@@ -50,6 +50,11 @@ Rules new_rules (void) {
                            TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED),
                        .recipe = compute_diabatic_heating_forcing},
 
+            [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_DIABATIC_HEATING),
+                   .recipe = 0},
+
             [TARGET_FIELD_FRICTION] =
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_friction},

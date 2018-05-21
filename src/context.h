@@ -20,6 +20,7 @@ struct Context {
     Vec          Diabatic_heating;
     Vec          Diabatic_heating_attennuated;
     Vec          Diabatic_heating_forcing;
+    Vec          Diabatic_heating_tendency;
     Vec          Friction;
     Vec          Geopotential_height;
     Vec          Horizontal_wind;
@@ -42,6 +43,9 @@ void free_context (Context *ctx);
 void update_context (size_t, Files, Context *);
 
 int diabatic_heating (Context *, const int ncid, const int time);
+int diabatic_heating_tendency (
+    int ncid, size_t step, size_t first, size_t mt, double *t, Vec Q,
+    Vec Qtend, Context *ctx);
 int friction (Context *, const int ncid, const int time);
 int horizontal_wind_and_vorticity_and_vorticity_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, DM da, DM da2,
