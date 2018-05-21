@@ -546,8 +546,8 @@ void update_context (size_t step, Files ncfile, Context *ctx) {
 
     const int ncid = ctx->ncid;
 
-    read2D (ncid, step, "PSFC", psfc);
-    file_read_3d (ncid, step, "GHT", Z);
+    read2D (ncid, step, "SP", psfc);
+    file_read_3d (ncid, step, "Z", Z);
     temperature (ncid, step, ctx->first, mt, time, T, Ttend, ctx);
     sigma_parameter (da, mz, p, T, sigma);
     horizontal_wind_and_vorticity_and_vorticity_tendency (
