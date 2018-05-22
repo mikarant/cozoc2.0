@@ -156,7 +156,7 @@ processed by COZOC,
 
 2. the file needs to be postprocessed with the postprocessing script
 
-    `bash WRFpostprocess <input> <output>`
+    `bash WRFpostprocess.bash <input> <output>`
 
 
 ## Running COZOC
