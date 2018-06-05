@@ -51,12 +51,12 @@ Files new_files (const Options *options) {
         .grid_type = get_grid_type (options, ncidin),
         .dimname   = {[DIM_T] = "time",
                     [DIM_Z] = "lev",
-                    [DIM_Y] = "y",
-                    [DIM_X] = "x"},
+                    [DIM_Y] = "lat",
+                    [DIM_X] = "lon"},
         .dimsize   = {[DIM_T] = file_get_dimsize (ncidin, "time"),
                     [DIM_Z] = file_get_dimsize (ncidin, "lev"),
-                    [DIM_Y] = file_get_dimsize (ncidin, "y"),
-                    [DIM_X] = file_get_dimsize (ncidin, "x")}};
+                    [DIM_Y] = file_get_dimsize (ncidin, "lat"),
+                    [DIM_X] = file_get_dimsize (ncidin, "lon")}};
 
     if (options->outfname[0]) {
         int dimids[4];
