@@ -6,5 +6,6 @@ extern const double Specific_gas_constant_of_dry_air;
 extern const double Specific_heat_of_dry_air;
 extern const double sigmamin;
 extern const double etamin;
+extern const double earth_radius;
 
 #endif /* CONSTANTS_H */
