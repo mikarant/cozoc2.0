@@ -12,7 +12,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
 
                 [TARGET_FIELD_DIABATIC_HEATING] =
                     (Target){.type  = TARGET_TYPE_FIELD,
-                             .field = (Field){.write       = true,
+                             .field = (Field){.write       = false,
                                               .name        = "Q",
                                               .description = "Diabatic heating",
                                               .units       = "K s**-1",
@@ -23,7 +23,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){
                         .type = TARGET_TYPE_FIELD,
                         .field =
-                            (Field){.write       = true,
+                            (Field){.write       = false,
                                     .name        = "Qatt",
                                     .description = "Diabatic heating with "
                                                    "surface attennuation",
@@ -35,13 +35,25 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){
                         .type = TARGET_TYPE_FIELD,
                         .field =
-                            (Field){.write = true,
+                            (Field){.write = false,
                                     .name  = "cffdiab",
                                     .description =
                                         "Forcing due to diabatic heating",
                                     .units = 0,
                                     .vec   = ctx->Diabatic_heating_forcing},
                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_ADVECTION_FORCING] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){.write = true,
+                            .name  = "cffvort",
+                            .description =
+                            "Forcing due to vorticity advection",
+                            .units = 0,
+                            .vec   = ctx->Vorticity_advection_forcing},
+                    .time = options.first - 1},
 
                 [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
                 (Target){
@@ -101,7 +113,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = true,
+                        .write       = false,
                         .name        = "cozoc_ome_t",
                         .description = "Omega due to temperature advection",
                         .units       = "Pa s-1",
@@ -114,7 +126,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         .type = TARGET_TYPE_FIELD,
                         .field =
                             (Field){
-                                .write       = true,
+                                .write       = false,
                                 .name        = "cozoc_ome_q",
                                 .description = "Omega due to diabatic heating",
                                 .units       = "Pa s-1",
@@ -127,7 +139,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = true,
+                        .write       = false,
                         .name        = "cozoc_ome_f",
                         .description = "Omega due to friction",
                         .units       = "Pa s-1",
@@ -140,7 +152,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = true,
+                        .write       = false,
                         .name        = "cozoc_ome_a",
                         .description = "Omega due to imbalance term",
                         .units       = "Pa s-1",

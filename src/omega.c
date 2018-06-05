@@ -7,7 +7,7 @@
 #include <petscdmda.h>
 #include <petscksp.h>
 
-#include "omega_stencil.inc"
+#include "spherical_omega_stencil.inc"
 
 
 char omega_component_id_string[NUM_GENERALIZED_OMEGA_COMPONENTS][NC_MAX_NAME] = {
@@ -36,7 +36,8 @@ extern PetscErrorCode omega_compute_operator (
     PetscScalar          hy  = ctx->hy;
     PetscScalar          hz  = ctx->hz;
     PetscScalar*         f   = ctx->Coriolis_parameter;
-//    PetscScalar*         p   = ctx->Pressure;
+    PetscScalar*         lat   = ctx->Latitude;
+    PetscScalar*         p   = ctx->Pressure;
     Vec                  sigmavec, zetavec, Vvec;
     const PetscScalar ***sigma, ***zeta, ****V;
     PetscInt             my = ctx->my;
@@ -45,6 +46,7 @@ extern PetscErrorCode omega_compute_operator (
     MatStencil           row, col[15];
     PetscScalar          w[15];
     PetscInt             xs, ys, zs, xm, ym, zm;
+    const double         r = earth_radius;
 
     DMGetLocalVector (da, &sigmavec);
     DMGetLocalVector (da, &zetavec);
@@ -60,13 +62,19 @@ extern PetscErrorCode omega_compute_operator (
         da2, ctx->Horizontal_wind, INSERT_VALUES, Vvec);
     DMGlobalToLocalEnd (da2, ctx->Horizontal_wind, INSERT_VALUES, Vvec);
 
-//    ellipticity_sigma_vorticity(ctx,mz, p, f, sigmavec, zetavec, Vvec);
+    ellipticity_sigma_vorticity(ctx,mz, p, f, sigmavec, zetavec, Vvec);
 
     DMDAVecGetArrayRead (da, sigmavec, &sigma);
     DMDAVecGetArrayRead (da, zetavec, &zeta);
     DMDAVecGetArrayDOFRead (da2, Vvec, &V);
 
     DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+//    hx = 2.0*3.141592654/512.0;
+//    hy = hx;
+//    for (int j = 0; j < ctx->my; j++) {
+//        PetscPrintf(PETSC_COMM_WORLD,"latitude at %d = %f\n",j,lat[j]);
+//         }
 
     info("In omega_compute_operator()\n");
 
@@ -89,7 +97,9 @@ extern PetscErrorCode omega_compute_operator (
                         hx,
                         hy,
                         hz,
+                        r,
                         f,
+                        lat,
                         sigma,
                         zeta,
                         V,
@@ -154,7 +164,7 @@ extern PetscErrorCode omega_compute_rhs_F_V (
 
 
     VecScale (b, hx * hy * hz);
-    /*        write3Ddump(ctx,"b",b); */
+    write3Ddump("b",512,256,20,b); 
 
     return (0); }
 
@@ -210,6 +220,7 @@ extern PetscErrorCode omega_compute_rhs_F_F (
     size_t       mz  = ctx->mz;
     PetscScalar* p   = ctx->Pressure;
     PetscScalar* f   = ctx->Coriolis_parameter;
+    PetscScalar* latitude = ctx->Latitude;
     Vec          F   = ctx->Friction;
     PetscScalar  hx  = ctx->hx;
     PetscScalar  hy  = ctx->hy;
@@ -217,7 +228,7 @@ extern PetscErrorCode omega_compute_rhs_F_F (
 //    Vec          s;
 
 //    DMGetGlobalVector (da, &s);
-    horizontal_rotor (da, da2, my, hx, hy, F, b);
+    horizontal_rotor (da, da2, my, hx, hy, latitude, F, b);
 //    mul_fact(ctx, s);
 //    VecPointwiseMult(b, s, b);
     fpder (da, mz, f, p, b);
@@ -240,7 +251,7 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
 
     Context*    ctx = (Context*) ctx_p;
     DM          da  = ctx->da;
-    Vec         Qatt   = ctx->Diabatic_heating;
+    Vec         Qatt   = ctx->Diabatic_heating_tendency;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
     PetscScalar hz  = ctx->hz;

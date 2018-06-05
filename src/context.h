@@ -17,9 +17,11 @@ struct Context {
     double *     Time_coordinate;    // In seconds
     PetscScalar *Pressure;
     PetscScalar *Coriolis_parameter;
+    PetscScalar *Latitude;
     Vec          Diabatic_heating;
     Vec          Diabatic_heating_attennuated;
     Vec          Diabatic_heating_forcing;
+    Vec          Vorticity_advection_forcing;
     Vec          Diabatic_heating_tendency;
     Vec          Friction;
     Vec          Geopotential_height;
@@ -49,7 +51,7 @@ int diabatic_heating_tendency (
 int friction (Context *, const int ncid, const int time);
 int horizontal_wind_and_vorticity_and_vorticity_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, DM da, DM da2,
-    size_t my, PetscScalar hx, PetscScalar hy, Vec V, Vec zeta,
+    size_t my, PetscScalar hx, PetscScalar hy, PetscScalar *latitude, Vec V, Vec zeta,
     Vec zetatend, Context *ctx);
 int temperature (
     int ncid, size_t step, size_t first, size_t mt, double *t, Vec T,

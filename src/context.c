@@ -8,6 +8,7 @@
 #include <petscdmda.h>
 #include <petscksp.h>
 #include <stdbool.h>
+#define PI 3.141592654
 
 Context new_context (Options const options, Files const files) {
     Context   ctx;
@@ -44,6 +45,7 @@ Context new_context (Options const options, Files const files) {
 
     PetscMalloc1 (ctx.mz, &ctx.Pressure);
     PetscMalloc1 (ctx.my, &ctx.Coriolis_parameter);
+    PetscMalloc1 (ctx.my, &ctx.Latitude);
     PetscMalloc1 (ctx.mt, &ctx.Time_coordinate);
 
     DMCreateGlobalVector (ctx.daxy, &ctx.Surface_pressure);
@@ -56,6 +58,7 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_attennuated);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_forcing);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
@@ -77,7 +80,7 @@ Context new_context (Options const options, Files const files) {
             ncid, "XTIME", start, count, ctx.Time_coordinate);
 
         for (int i = 0; i < (int)ctx.mt; i++)
-            ctx.Time_coordinate[i] *= (double)60;
+            ctx.Time_coordinate[i] *= (double)3600;
     }
 
     /* Pressure levels (z-coordinate) */
@@ -87,24 +90,35 @@ Context new_context (Options const options, Files const files) {
         file_read_array_double (ncid, "LEV", start, count, ctx.Pressure);
     }
 
+    /* Latitude) */
+    {
+      size_t start[1] = {0};
+      size_t count[1] = {ctx.my};
+      file_read_array_double (ncid, "lat", start, count, ctx.Latitude);
+    }
+
     /* Coriollis parameter is taken to be a function of latitude, only
      */
-    {
+/*    {
         size_t start[3] = {0, 0, 0};
         size_t count[3] = {1, ctx.my, 1};
         file_read_array_double (
             ncid, "F", start, count, ctx.Coriolis_parameter);
+            }*/
+    for (int j = 0; j < ctx.my; j++) {
+      ctx.Latitude[j] *= PI/180.0;
+      ctx.Coriolis_parameter[j] = 2*7.292e-5*sin(ctx.Latitude[j]);
     }
 
     /* Grid spacings */
-    ctx.hx = 100000.0;
-    ctx.hy = 100000.0;
+    ctx.hx = 2.0*PI/ctx.mx;
+    ctx.hy = PI/ctx.my;
     info("Grid spacings are hard-wired");
 
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = 0;//min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -215,20 +229,20 @@ int sigma_parameter (
 
 static int horizontal_wind_and_vorticity (
     const int ncid, const int step, DM da, DM da2, size_t my, PetscScalar hx,
-    PetscScalar hy, Vec tmpvec, Vec V, Vec zeta) {
+    PetscScalar hy, PetscScalar *latitude, Vec tmpvec, Vec V, Vec zeta) {
     for (int i = 0; i < 2; i++) {
         char name[2][3] = {"U", "V"};
         file_read_3d (ncid, step, name[i], tmpvec);
         VecStrideScatter (tmpvec, i, V, INSERT_VALUES);
     }
 
-    horizontal_rotor (da, da2, my, hx, hy, V, zeta);
+    horizontal_rotor (da, da2, my, hx, hy, latitude, V, zeta);
     return (0);
 }
 
 int horizontal_wind_and_vorticity_and_vorticity_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, DM da, DM da2,
-    size_t my, PetscScalar hx, PetscScalar hy, Vec V, Vec zeta, Vec zetatend,
+    size_t my, PetscScalar hx, PetscScalar hy, PetscScalar *latitude, Vec V, Vec zeta, Vec zetatend,
     Context *ctx) {
 
     static Vec tmpvec   = 0;
@@ -248,20 +262,20 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
     if (step == first) {
         if (first == 0) {
             horizontal_wind_and_vorticity (
-                ncid, step, da, da2, my, hx, hy, tmpvec, V, zeta);
+            ncid, step, da, da2, my, hx, hy, latitude, tmpvec, V, zeta);
             horizontal_wind_and_vorticity (
-                ncid, step + 1, da, da2, my, hx, hy, tmpvec, Vnext, zetanext);
+            ncid, step + 1, da, da2, my, hx, hy, latitude, tmpvec, Vnext, zetanext);
 
             VecCopy (zeta, zetatend);
             VecAXPY (zetatend, -1.0, zetanext);
             VecScale (zetatend, -1.0 / (double)(t[step + 1] - t[step]));
         } else {
             horizontal_wind_and_vorticity (
-                ncid, step - 1, da, da2, my, hx, hy, tmpvec, Vprev, zetaprev);
+            ncid, step - 1, da, da2, my, hx, hy, latitude, tmpvec, Vprev, zetaprev);
             horizontal_wind_and_vorticity (
-                ncid, step, da, da2, my, hx, hy, tmpvec, V, zeta);
+            ncid, step, da, da2, my, hx, hy, latitude, tmpvec, V, zeta);
             horizontal_wind_and_vorticity (
-                ncid, step + 1, da, da2, my, hx, hy, tmpvec, Vnext, zetanext);
+            ncid, step + 1, da, da2, my, hx, hy, latitude, tmpvec, Vnext, zetanext);
 
             VecCopy (zetaprev, zetatend);
             VecAXPY (zetatend, -1.0, zetanext);
@@ -283,7 +297,7 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
             VecCopy (zeta, zetaprev);
             VecCopy (zetanext, zeta);
             horizontal_wind_and_vorticity (
-                ncid, step + 1, da, da2, my, hx, hy, tmpvec, Vnext, zetanext);
+            ncid, step + 1, da, da2, my, hx, hy, latitude, tmpvec, Vnext, zetanext);
 
             VecCopy (zetaprev, zetatend);
             VecAXPY (zetatend, -1.0, zetanext);
@@ -308,10 +322,10 @@ int diabatic_heating (Context *ctx, const int ncid, const int step) {
     Vec           Q          = ctx->Diabatic_heating;
 
     file_read_3d (ncid, step, "Q", Q);
-    if (false) {
-      diabatic_heating_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, &
+    //    if (false) {
+      diabatic_heating_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, 
                                  Q, ctx->Diabatic_heating_tendency,ctx);
-    }
+      //    }
 
     return (0);
 }
@@ -419,7 +433,7 @@ void update_context (size_t step, Files ncfile, Context *ctx) {
     temperature (ncid, step, ctx->first, mt, time, T, Ttend, ctx);
     sigma_parameter (da, mz, p, T, sigma);
     horizontal_wind_and_vorticity_and_vorticity_tendency (
-        ncid, step, ctx->first, mt, time, da, da2, my, hx, hy, V, zeta,
+    ncid, step, ctx->first, mt, time, da, da2, my, hx, hy, ctx->Latitude,V, zeta,
         zetatend, ctx);
     diabatic_heating (ctx, ncid, step);
     friction (ctx, ncid, step);

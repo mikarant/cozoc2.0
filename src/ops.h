@@ -17,6 +17,7 @@ int horizontal_rotor (
     const size_t      my,
     const PetscScalar hx,
     const PetscScalar hy,
+    PetscScalar      *latitude,
     Vec               Vvec,
     Vec               bvec);
 
@@ -31,8 +32,6 @@ int plaplace (Vec inout, Context* ctx);
 
 int mul_fact (Context* ctx, Vec s);
 
-/*
-
 int ellipticity_sigma_vorticity (
     Context*     ctx,
     size_t       mz,
@@ -41,7 +40,7 @@ int ellipticity_sigma_vorticity (
     Vec          sigmavec,
     Vec          zetavec,
     Vec          V);
-
+/*
 int xder (Vec bvec, Context* ctx);
 
 int yder (Vec bvec, Context* ctx);

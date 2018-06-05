@@ -199,8 +199,9 @@ extern PetscErrorCode geostrophic_vorticity (
     size_t      my  = ctx->my;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
+    PetscScalar *latitude = ctx->Latitude;
 
-    horizontal_rotor (da, da2, my, hx, hy, V_g, result);
+    horizontal_rotor (da, da2, my, hx, hy, latitude, V_g, result);
 
     return (0); }
 

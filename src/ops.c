@@ -69,6 +69,7 @@ int horizontal_rotor (
     const size_t      my,
     const PetscScalar hx,
     const PetscScalar hy,
+    PetscScalar       *latitude,
     Vec               Vvec,
     Vec               bvec) {
 
@@ -76,6 +77,7 @@ int horizontal_rotor (
     Vec             avec;
     PetscInt        i, j, k, zs, ys, xs, zm, ym, xm;
     PetscScalar ****a, ***b;
+    const double    r_inv =  1.0 / earth_radius;
 
     DMGetLocalVector (da2, &avec);
     DMGlobalToLocalBegin (da2, Vvec, INSERT_VALUES, avec);
@@ -105,9 +107,10 @@ int horizontal_rotor (
                 j0  = j - 1; }
 
             for (i = xs; i < xs + xm; i++) {
-                b[k][j][i] =
-                    (a[k][j][i + 1][1] - a[k][j][i - 1][1]) * wx -
-                    (a[k][j1][i][0] - a[k][j0][i][0]) * wyj; } } }
+                b[k][j][i] = (r_inv) / cos(latitude[j]) *
+                    ((a[k][j][i + 1][1] - a[k][j][i - 1][1]) * wx -
+                     cos(latitude[j]) * ((a[k][j1][i][0] -
+                    a[k][j0][i][0]) * wyj)); } } }
 
     DMDAVecRestoreArrayDOFRead (da, avec, &a);
     DMDAVecRestoreArray (da, bvec, &b);
@@ -132,6 +135,8 @@ int horizontal_advection (Vec bvec, Vec Vvec, Context* ctx) {
     Vec             avec;
     PetscInt        i, j, k, zs, ys, xs, zm, ym, xm;
     PetscScalar ****V, ***a, ***b;
+    const double    r_inv =  1.0 / earth_radius;
+    PetscScalar     *latitude = ctx->Latitude;;
 
     DMGetLocalVector (da, &avec);
     DMGlobalToLocalBegin (da, bvec, INSERT_VALUES, avec);
@@ -163,10 +168,9 @@ int horizontal_advection (Vec bvec, Vec Vvec, Context* ctx) {
                 j0  = j - 1; }
 
             for (i = xs; i < xs + xm; i++) {
-                b[k][j][i] =
-                    V[k][j][i][0] * (a[k][j][i + 1] - a[k][j][i - 1]) *
-                    wx +
-                    V[k][j][i][1] * (a[k][j1][i] - a[k][j0][i]) * wyj; } } }
+                b[k][j][i] = (r_inv) * ( (1.0 / cos(latitude[j])) *
+                    (V[k][j][i][0] * (a[k][j][i + 1] - a[k][j][i - 1]) *
+                     wx) + V[k][j][i][1] * (a[k][j1][i] - a[k][j0][i]) * wyj); } } }
 
     DMDAVecRestoreArrayRead (da, avec, &a);
     DMDAVecRestoreArrayDOFRead (da, Vvec, &V);
@@ -287,10 +291,11 @@ int plaplace (Vec inout, Context* ctx) {
 
     DM             da = ctx->da;
     PetscScalar*   p  = ctx->Pressure;
+    PetscScalar*   lat  = ctx->Latitude;
     PetscScalar    hx = ctx->hx;
     PetscScalar    hy = ctx->hy;
     PetscInt       my = ctx->my;
-    PetscInt       mz = ctx->mz;
+    const double   r2_inv = 1.0 / (earth_radius*earth_radius);
     const double   R  = Specific_gas_constant_of_dry_air;
     Vec            Vvec;
     PetscInt       zs, ys, xs, zm, ym, xm;
@@ -324,10 +329,14 @@ int plaplace (Vec inout, Context* ctx) {
                 j0 = j - 1; }
 
             for (int i = xs; i < xs + xm; i++) {
-                result[k][j][i] =
+                result[k][j][i] = r2_inv * (
+                    1.0 / (cos(lat[j])*cos(lat[j])) *
                     wx * (v[k][j][i + 1] - 2.0 * v[k][j][i] +
                           v[k][j][i - 1]) +
-                    wy * (v[k][j1][i] - 2.0 * v[k][j][i] + v[k][j0][i]); } } }
+                    wy * (v[k][j1][i] - 2.0 * v[k][j][i] + v[k][j0][i])
+                    - tan(lat[j]) * (v[k][j1][i] - v[k][j0][i]) * 0.5*wy
+
+                    ); } } }
 
     DMDAVecRestoreArray (da, inout, &result);
     DMDAVecRestoreArray (da, Vvec, &v);
@@ -385,7 +394,7 @@ int mul_fact (Context* ctx, Vec s) {
     return (0); }
 
 
-/*
+
 int ellipticity_sigma_vorticity (
     Context*     ctx,
     size_t       mz,
@@ -437,18 +446,32 @@ int ellipticity_sigma_vorticity (
             for (int i = xs; i < xs + xm; i++) {
                 if (sigma[k][j][i] < sigmamin)
                    sigma[k][j][i] = sigmamin;
-                tmp = etamin + f[j] /
-                    (4.0 * sigma[k][j][i]) * (
-                        tmpU[k][j][i]*tmpU[k][j][i] +
-                        tmpV[k][j][i]*tmpV[k][j][i]) -
-                    f[j];
-                if (zetaraw[k][j][i] > tmp) {
-                    zetaraw[k][j][i] = zetaraw[k][j][i];
-                    sum1 += 1;}
-                else {
-                    zetaraw[k][j][i] = tmp;
-                    sum2 += 1;}
+                if (f[j] > 1e-7) {
+                    tmp = etamin + f[j] /
+                        (4.0 * sigma[k][j][i]) * (
+                            tmpU[k][j][i]*tmpU[k][j][i] +
+                            tmpV[k][j][i]*tmpV[k][j][i]) -
+                        f[j];
+                    if (zetaraw[k][j][i] > tmp) {
+                        zetaraw[k][j][i] = zetaraw[k][j][i];
+                        sum1 += 1;}
+                    else {
+                        zetaraw[k][j][i] = tmp;
+                        sum2 += 1; } }
+                if (f[j] < -1e-7) {
+                    tmp = -etamin + f[j] /
+                        (4.0 * sigma[k][j][i]) * (
+                            tmpU[k][j][i]*tmpU[k][j][i] +
+                            tmpV[k][j][i]*tmpV[k][j][i]) -
+                        f[j];
+                    if (zetaraw[k][j][i] < tmp) {
+                        zetaraw[k][j][i] = zetaraw[k][j][i];
+                        sum1 += 1;}
+                    else {
+                        zetaraw[k][j][i] = tmp;
+                        sum2 += 1; } }
             } } }
+
     PetscPrintf(PETSC_COMM_WORLD,"Ei täyttynyt: %d täyttyi: %d\n",sum1,sum2);
 
     DMDAVecRestoreArray (da, tmpUvec, &tmpU);
@@ -457,7 +480,7 @@ int ellipticity_sigma_vorticity (
     DMDAVecRestoreArray (da, zetavec, &zetaraw);
 
     return (0);}
-
+/*
 int xder (Vec bvec, Context* ctx) {
 
     DM           da = ctx->da;
