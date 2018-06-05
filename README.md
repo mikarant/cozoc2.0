@@ -154,9 +154,9 @@ processed by COZOC,
 
     TODO: `<wrfinterp command here>`
 
-2. the file needs to be converted to NetCDF4/HDF5 format
+2. the file needs to be postprocessed with the postprocessing script
 
-    `nccopy -k nc4 <input> <output>`
+    `bash WRFpostprocess.bash <input> <output>`
 
 
 ## Running COZOC
