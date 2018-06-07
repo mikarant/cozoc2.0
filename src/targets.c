@@ -203,7 +203,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_SURFACE_PRESSURE] =
                     (Target){.type  = TARGET_TYPE_FIELD,
                              .field = (Field){.write       = false,
-                                              .name        = "PSFC",
+                                              .name        = "SP",
                                               .description = "Surface pressure",
                                               .units       = "",
                                               .vec = ctx->Surface_pressure},
