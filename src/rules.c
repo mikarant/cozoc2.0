@@ -76,7 +76,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_V] =
             (Rule){.prerequisites = new_target_list (
-                    TARGET_FIELD_SURFACE_PRESSURE,
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
