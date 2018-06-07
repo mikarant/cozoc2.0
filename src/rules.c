@@ -76,6 +76,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_V] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_SURFACE_PRESSURE,
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
@@ -128,7 +129,8 @@ Rules new_rules (void) {
                        .recipe = compute_sigma_parameter},
 
             [TARGET_FIELD_SURFACE_PRESSURE] =
-                (Rule){.prerequisites = 0, .recipe = read_field_2d},
+                (Rule){.prerequisites = 0,
+                       .recipe = read_field_2d},
 
             [TARGET_FIELD_SURFACE_ATTENNUATION] =
                 (Rule){.prerequisites =
@@ -347,9 +349,21 @@ static void compute_vorticity_advection_forcing (
 
 static void
 read_field_2d (TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    read2D (
-        ctx->ncid, targets->target[id].time, targets->target[id].field.name,
-        ctx->Surface_pressure);
+    PetscScalar **psfcArray;
+    Vec          psfc     = ctx->Surface_pressure;
+    PetscInt      ys, xs, ym, xm;
+    int            idd;
+
+//    read2D (ctx->ncid, targets->target[id].time, "SP",psfc);
+
+    DMDAGetCorners (ctx->daxy, &xs, &ys, 0, &xm, &ym, 0);
+    DMDAVecGetArray (ctx->daxy, psfc, &psfcArray);
+    size_t start[4] = {targets->target[id].time, 0 , ys, xs};
+    size_t count[4] = {1, 1 , ym, xm};
+    nc_inq_varid (ctx->ncid, targets->target[id].field.name, &idd);
+    nc_get_vara_double (ctx->ncid, idd, start, count, &psfcArray[start[2]][start[3]]);
+    DMDAVecRestoreArray (ctx->daxy, psfc, &psfcArray);
+
 }
 
 static void
