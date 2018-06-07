@@ -353,14 +353,14 @@ int mul_fact (Context* ctx, Vec s) {
     Vec          PSFCVec = ctx->Surface_pressure;
 
     PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
-    PetscScalar ***sa, **psfc;
+    PetscScalar ***sa, **psfc,pm1;
 
     DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
 
     DMDAVecGetArray (da, s, &sa);
     DMDAVecGetArrayRead (daxy, PSFCVec, &psfc);
 
-    for (k = 1; k < (int) ctx->mz - 1; k++) {
+/*    for (k = 1; k < (int) ctx->mz - 1; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
                 if (psfc[j][i] <= (p[k] + p[k + 1]) / 2) {
@@ -388,6 +388,27 @@ int mul_fact (Context* ctx, Vec s) {
                 sa[k][j][i] = 0.0; }
             else {
                 sa[k][j][i] = 1.0; } } }
+*/
+        PetscPrintf(PETSC_COMM_WORLD,"in mulfact\n");
+
+    for (k = 0; k < (int) ctx->mz - 2; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                sa[k][j][i] = 1.0;
+                if (k==0)
+                    pm1=2*p[0]-p[1];
+                else
+                    pm1=p[k-1];
+
+                if (psfc[j][i] <= (p[k]-(p[k] - p[k + 1]) / 2)) {
+                    sa[k][j][i] = 0.0;
+                }
+
+                else if (psfc[j][i] > (p[k] - (p[k]-p[k + 1]) / 2) &&
+                    psfc[j][i] <= p[k]+(pm1-p[k])/2) {
+                    sa[k][j][i] = (psfc[j][i]-(p[k+1]+(p[k]-p[k+1])/2)) /
+                        ((pm1-p[k])/2 + (p[k]-p[k+1])/2); }
+            } } }
 
     DMDAVecRestoreArrayRead (daxy, PSFCVec, &psfc);
     DMDAVecRestoreArray (da, s, &sa);
