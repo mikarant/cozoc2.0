@@ -70,12 +70,6 @@ extern PetscErrorCode omega_compute_operator (
 
     DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
 
-//    hx = 2.0*3.141592654/512.0;
-//    hy = hx;
-//    for (int j = 0; j < ctx->my; j++) {
-//        PetscPrintf(PETSC_COMM_WORLD,"latitude at %d = %f\n",j,lat[j]);
-//         }
-
     info("In omega_compute_operator()\n");
 
     for (int k = zs; k < zs + zm; k++) {
@@ -142,13 +136,15 @@ extern PetscErrorCode omega_compute_rhs_F_V (
     PetscScalar* p    = ctx->Pressure;
     Vec          zeta = ctx->Vorticity;
     Vec          V    = ctx->Horizontal_wind;
+    Vec          s    = ctx->Surface_attennuation;
     PetscScalar* f    = ctx->Coriolis_parameter;
     PetscScalar  hx   = ctx->hx;
     PetscScalar  hy   = ctx->hy;
     PetscScalar  hz   = ctx->hz;
-//    Vec          s;
-
-//    DMGetGlobalVector (da, &s);
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
 
     VecCopy (zeta, b);
 
@@ -157,14 +153,17 @@ extern PetscErrorCode omega_compute_rhs_F_V (
 
     horizontal_advection (b, V, ctx);
 
-//    mul_fact(ctx, s);
-
-//    VecPointwiseMult(b, s, b);
+    VecPointwiseMult(b, s, b);
     fpder (da, mz, f, p, b);
 
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
 
-    VecScale (b, hx * hy * hz);
-    write3Ddump("b",512,256,20,b); 
+    DMDAVecRestoreArray (da, b, &a);
 
     return (0); }
 
