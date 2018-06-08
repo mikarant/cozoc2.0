@@ -314,29 +314,39 @@ int plaplace (Vec inout, Context* ctx) {
     for (int k = zs; k < zs + zm; k++) {
         double wx = R / (hx * hx * p[k]);
         double wy = R / (hy * hy * p[k]);
+        double wyy = R / (2.0 * hy * p[k]);
 
         for (int j = ys; j < ys + ym; j++) {
-            int j0, j1;
+            int jj,j0, j1, j00, j11;
 
             if (j == 0) {
-                j1 = j;
-                j0 = j; }
+                jj = j + 1;
+                j1 = j + 2;
+                j0 = j;
+                j11 = j + 1;
+                j00 = 0;}
             else if (j == my - 1) {
-                j1 = j;
-                j0 = j; }
+                jj = j - 1;
+                j1 = j - 2;
+                j0 = j;
+                j11 = j;
+                j00 = j - 1;}
             else {
+                jj = j;
                 j1 = j + 1;
-                j0 = j - 1; }
+                j0 = j - 1;
+                j11 = j + 1;
+                j00 = j - 1;}
 
             for (int i = xs; i < xs + xm; i++) {
                 result[k][j][i] = r2_inv * (
                     1.0 / (cos(lat[j])*cos(lat[j])) *
                     wx * (v[k][j][i + 1] - 2.0 * v[k][j][i] +
                           v[k][j][i - 1]) +
-                    wy * (v[k][j1][i] - 2.0 * v[k][j][i] + v[k][j0][i])
-                    - tan(lat[j]) * (v[k][j1][i] - v[k][j0][i]) * 0.5*wy
-
-                    ); } } }
+                    wy * (v[k][j1][i] - 2.0 * v[k][jj][i] + v[k][j0][i])
+                    - tan(lat[j]) * (v[k][j11][i] - v[k][j00][i]) * wyy
+                    );
+            } } }
 
     DMDAVecRestoreArray (da, inout, &result);
     DMDAVecRestoreArray (da, Vvec, &v);
