@@ -59,9 +59,11 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_attennuated);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_forcing);
+    VecDuplicate (ctx.Temperature, &ctx.Temperature_advection_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Total_omega);
     for (size_t i = 0; i < NUM_GENERALIZED_OMEGA_COMPONENTS; i++) {
         VecDuplicate (ctx.Temperature, &ctx.omega[i]);
     }
@@ -97,14 +99,8 @@ Context new_context (Options const options, Files const files) {
       file_read_array_double (ncid, "lat", start, count, ctx.Latitude);
     }
 
-    /* Coriollis parameter is taken to be a function of latitude, only
-     */
-/*    {
-        size_t start[3] = {0, 0, 0};
-        size_t count[3] = {1, ctx.my, 1};
-        file_read_array_double (
-            ncid, "F", start, count, ctx.Coriolis_parameter);
-            }*/
+    /* Coriollis parameter is taken to be a function of latitude, only */
+
     for (int j = 0; j < ctx.my; j++) {
       ctx.Latitude[j] *= PI/180.0;
       ctx.Coriolis_parameter[j] = 2*7.292e-5*sin(ctx.Latitude[j]);
@@ -118,7 +114,7 @@ Context new_context (Options const options, Files const files) {
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = 0;//min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -392,19 +388,88 @@ int friction (Context *ctx, const int ncid, const int step) {
 
     DM            da         = ctx->da;
     Vec           F          = ctx->Friction;
-    Vec           tmp3d;
+    Vec           tmp3d1,tmp3d2;
 
-    DMGetGlobalVector (da, &tmp3d);
+    DMGetGlobalVector (da, &tmp3d1);
+    DMGetGlobalVector (da, &tmp3d2);
 
-    file_read_3d (ncid, step, "FU", tmp3d);
-    VecStrideScatter (tmp3d, 0, F, INSERT_VALUES);
-    file_read_3d (ncid, step, "FV", tmp3d);
-    VecStrideScatter (tmp3d, 1, F, INSERT_VALUES);
+    friction_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FU",
+                       tmp3d1, tmp3d2,ctx);
 
-    DMRestoreGlobalVector (da, &tmp3d);
+
+    //    file_read_3d (ncid, step, "FU", tmp3d);
+    VecStrideScatter (tmp3d2, 0, F, INSERT_VALUES);
+    //    file_read_3d (ncid, step, "FV", tmp3d);
+
+    friction_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FV",
+                       tmp3d1, tmp3d2,ctx);
+    VecStrideScatter (tmp3d2, 1, F, INSERT_VALUES);
+
+    DMRestoreGlobalVector (da, &tmp3d1);
+    DMRestoreGlobalVector (da, &tmp3d2);
 
     return (0);
 }
+
+int friction_tendency (
+    int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname, Vec F,
+    Vec Ftend, Context *ctx) {
+
+    static Vec tmpvec   = 0;
+    static Vec Fnext    = 0;
+    static Vec Fprev    = 0;
+
+    if (!Fnext) {    // The first step
+        VecDuplicate (ctx->Diabatic_heating_tendency, &Fnext);
+        VecDuplicate (ctx->Diabatic_heating_tendency, &Fprev);
+        VecDuplicate (ctx->Diabatic_heating_tendency, &tmpvec);
+    }
+
+    if (step == first) {
+        if (first == 0) {
+            file_read_3d (ncid, step, varname, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (F, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step]));
+        } else {
+            file_read_3d (ncid, step - 1, varname, Fprev);
+            file_read_3d (ncid, step, varname, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    } else {
+        if (step == mt - 1) {
+            VecCopy (F, Fprev);
+            VecCopy (Fnext, F);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, F);
+            VecScale (Ftend, -1.0 / (double)(t[step] - t[step - 1]));
+        } else {
+            VecCopy (F, Fprev);
+            VecCopy (Fnext, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    }
+
+    if (step == ctx->last) {
+        VecDestroy (&tmpvec);
+        VecDestroy (&Fprev);
+        VecDestroy (&Fnext);
+    }
+    return (0);
+}
+
+
 
 void update_context (size_t step, Files ncfile, Context *ctx) {
 
