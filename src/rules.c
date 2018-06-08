@@ -17,7 +17,10 @@ static void
             compute_diabatic_heating_forcing (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_vorticity_advection_forcing (TARGET, Targets *, const Rules *, Context *);
+static void
+            compute_temperature_advection_forcing (TARGET, Targets *, const Rules *, Context *);
 static void compute_friction (TARGET, Targets *, const Rules *, Context *);
+static void compute_total_omega (TARGET, Targets *, const Rules *, Context *);
 static void
 compute_horizontal_wind_etc (TARGET, Targets *, const Rules *, Context *);
 static void
@@ -53,9 +56,16 @@ Rules new_rules (void) {
                     TARGET_FIELD_HORIZONTAL_WIND),
                    .recipe = compute_vorticity_advection_forcing},
 
+            [TARGET_FIELD_TEMPERATURE_ADVECTION_FORCING] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_TEMPERATURE,
+                    TARGET_FIELD_HORIZONTAL_WIND),
+                   .recipe = compute_temperature_advection_forcing},
+
+
             [TARGET_FIELD_DIABATIC_HEATING_FORCING] =
                 (Rule){.prerequisites = new_target_list (
-                           TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED),
+                           TARGET_FIELD_DIABATIC_HEATING),
                        .recipe = compute_diabatic_heating_forcing},
 
             [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
@@ -84,6 +94,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_T] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_TEMPERATURE,
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
@@ -92,14 +103,16 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_Q] =
                 (Rule){.prerequisites = new_target_list (
-                           TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED,
-                           TARGET_FIELD_HORIZONTAL_WIND,
-                           TARGET_FIELD_SIGMA_PARAMETER,
-                           TARGET_FIELD_VORTICITY),
-                       .recipe = 0/*compute_omega_component*/},
+                        TARGET_FIELD_SURFACE_ATTENNUATION,
+                        TARGET_FIELD_DIABATIC_HEATING,
+                        TARGET_FIELD_HORIZONTAL_WIND,
+                        TARGET_FIELD_SIGMA_PARAMETER,
+                        TARGET_FIELD_VORTICITY),
+                       .recipe = compute_omega_component},
 
             [TARGET_FIELD_OMEGA_F] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_FRICTION,
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
@@ -108,11 +121,21 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_A] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_TEMPERATURE_TENDENCY,
                     TARGET_FIELD_VORTICITY_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = 0/*compute_omega_component*/},
+
+            [TARGET_FIELD_TOTAL_OMEGA] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_V,
+                    TARGET_FIELD_OMEGA_T,
+                    TARGET_FIELD_OMEGA_Q,
+                    TARGET_FIELD_OMEGA_F,
+                    TARGET_FIELD_OMEGA_A,),
+                   .recipe = compute_total_omega},
 
             [TARGET_FIELD_TEMPERATURE] =
                 (Rule){.prerequisites = 0,
@@ -245,6 +268,14 @@ static void compute_friction (
     friction (ctx, ctx->ncid, targets->target[id].time);
 }
 
+static void compute_total_omega (TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    VecWAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_V],
+             ctx->omega[GENERALIZED_OMEGA_COMPONENT_T]);
+    VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]);
+    VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q]);
+    VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]);
+}
+
 static void compute_omega_component (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     KSPSetComputeOperators (ctx->ksp, omega_compute_operator, ctx);
@@ -345,6 +376,11 @@ static void compute_diabatic_heating_forcing (
 static void compute_vorticity_advection_forcing (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     omega_compute_rhs_F_V (ctx->ksp, ctx->Vorticity_advection_forcing, ctx);
+}
+
+static void compute_temperature_advection_forcing (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    omega_compute_rhs_F_T (ctx->ksp, ctx->Temperature_advection_forcing, ctx);
 }
 
 static void
