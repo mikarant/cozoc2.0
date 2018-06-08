@@ -179,23 +179,32 @@ extern PetscErrorCode omega_compute_rhs_F_T (
     KSP ksp, Vec b, void* ctx_p) {
 
     Context*    ctx = (Context*) ctx_p;
-//    DM           da   = ctx->da;
+    DM           da   = ctx->da;
     Vec         T   = ctx->Temperature;
     Vec         V   = ctx->Horizontal_wind;
+    Vec          s    = ctx->Surface_attennuation;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
     PetscScalar hz  = ctx->hz;
-//    Vec          s;
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
 
-//    DMGetGlobalVector (da, &s);
     VecCopy (T, b);
     horizontal_advection (b, V, ctx);
-//    mul_fact(ctx, s);
-//    VecPointwiseMult(b, s, b);
-    plaplace (b, ctx);
-//    write3Ddump ("F",40,80,19,b);
 
-    VecScale (b, hx * hy * hz);
+    VecPointwiseMult(b, s, b);
+    plaplace (b, ctx);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+
+    DMDAVecRestoreArray (da, b, &a);
 
     return (0); }
 
@@ -221,18 +230,28 @@ extern PetscErrorCode omega_compute_rhs_F_F (
     PetscScalar* f   = ctx->Coriolis_parameter;
     PetscScalar* latitude = ctx->Latitude;
     Vec          F   = ctx->Friction;
+    Vec          s    = ctx->Surface_attennuation;
     PetscScalar  hx  = ctx->hx;
     PetscScalar  hy  = ctx->hy;
     PetscScalar  hz  = ctx->hz;
-//    Vec          s;
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
 
-//    DMGetGlobalVector (da, &s);
     horizontal_rotor (da, da2, my, hx, hy, latitude, F, b);
-//    mul_fact(ctx, s);
-//    VecPointwiseMult(b, s, b);
+
+    VecPointwiseMult(b, s, b);
     fpder (da, mz, f, p, b);
 
-    VecScale (b, -hx * hy * hz);
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+
+    DMDAVecRestoreArray (da, b, &a);
 
     return (0); }
 
@@ -251,17 +270,29 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
     Context*    ctx = (Context*) ctx_p;
     DM          da  = ctx->da;
     Vec         Qatt   = ctx->Diabatic_heating_tendency;
+    Vec          s    = ctx->Surface_attennuation;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
     PetscScalar hz  = ctx->hz;
-//    Vec         s;
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
 
-//    DMGetGlobalVector(da, &s);
     VecCopy (Qatt, b);
-//    mul_fact(ctx, s);
-//    VecPointwiseMult(b, s, b);
+
+    VecPointwiseMult(b, s, b);
     plaplace (b, ctx);
-    VecScale (b, -hx * hy * hz);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= -r * r * hx * hy * hz * sin(lat[j]); } } }
+
+    DMDAVecRestoreArray (da, b, &a);
+//    VecScale (b, -hx * hy * hz);
 
     return (0); }
 
@@ -286,31 +317,40 @@ extern PetscErrorCode omega_compute_rhs_F_A (
     PetscScalar* f       = ctx->Coriolis_parameter;
     Vec          dzetadt = ctx->Vorticity_tendency;
     Vec          dTdt    = ctx->Temperature_tendency;
+    Vec          s    = ctx->Surface_attennuation;
     PetscScalar  hx      = ctx->hx;
     PetscScalar  hy      = ctx->hy;
     PetscScalar  hz      = ctx->hz;
     Vec          tmpvec;
-//    Vec          s;
-
-//    DMGetGlobalVector (da, &s);
-//    mul_fact (ctx, s);
-
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
 
     DMGetGlobalVector (da, &tmpvec);
     VecCopy (dTdt, b);
 
-//    VecPointwiseMult (b, s, b);
+    VecPointwiseMult (b, s, b);
 
     plaplace (b, ctx);
     VecCopy (dzetadt, tmpvec);
 
-//    VecPointwiseMult (tmpvec, s, tmpvec);
+    VecPointwiseMult (tmpvec, s, tmpvec);
 
     fpder (da, mz, f, p, tmpvec);
     VecAXPY (b, 1.0, tmpvec);
 
 
     DMRestoreGlobalVector (da, &tmpvec);
-    VecScale (b, hx * hy * hz);
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+
+    DMDAVecRestoreArray (da, b, &a);
+
+//    VecScale (b, hx * hy * hz);
 
     return (0); }
