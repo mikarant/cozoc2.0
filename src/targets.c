@@ -55,6 +55,18 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                             .vec   = ctx->Vorticity_advection_forcing},
                     .time = options.first - 1},
 
+                [TARGET_FIELD_TEMPERATURE_ADVECTION_FORCING] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){.write = true,
+                            .name  = "cfftemp",
+                            .description =
+                            "Forcing due to temperature advection",
+                            .units = 0,
+                            .vec   = ctx->Temperature_advection_forcing},
+                    .time = options.first - 1},
+
                 [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
                 (Target){
                     .type = TARGET_TYPE_FIELD,
@@ -158,6 +170,19 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         .units       = "Pa s-1",
                         .vec =
                         ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]},
+                    .time = options.first - 1},
+
+                [TARGET_FIELD_TOTAL_OMEGA] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = true,
+                        .name        = "cozoc_ome_tot",
+                        .description = "Total calculated omega",
+                        .units       = "Pa s-1",
+                        .vec =
+                        ctx->Total_omega},
                     .time = options.first - 1},
 
                 [TARGET_FIELD_SURFACE_ATTENNUATION] =
