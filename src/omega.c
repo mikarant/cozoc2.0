@@ -161,7 +161,7 @@ extern PetscErrorCode omega_compute_rhs_F_V (
     for (k = zs; k < zs + zm; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+                a[k][j][i] *= r * r * hx * hy * hz * cos(lat[j]); } } }
 
     DMDAVecRestoreArray (da, b, &a);
 
@@ -202,7 +202,7 @@ extern PetscErrorCode omega_compute_rhs_F_T (
     for (k = zs; k < zs + zm; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+                a[k][j][i] *= r * r * hx * hy * hz * cos(lat[j]); } } }
 
     DMDAVecRestoreArray (da, b, &a);
 
@@ -249,7 +249,7 @@ extern PetscErrorCode omega_compute_rhs_F_F (
     for (k = zs; k < zs + zm; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+                a[k][j][i] *= -r * r * hx * hy * hz * cos(lat[j]); } } }
 
     DMDAVecRestoreArray (da, b, &a);
 
@@ -289,7 +289,7 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
     for (k = zs; k < zs + zm; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= -r * r * hx * hy * hz * sin(lat[j]); } } }
+                a[k][j][i] *= -r * r * hx * hy * hz * cos(lat[j]); } } }
 
     DMDAVecRestoreArray (da, b, &a);
 //    VecScale (b, -hx * hy * hz);
@@ -347,7 +347,7 @@ extern PetscErrorCode omega_compute_rhs_F_A (
     for (k = zs; k < zs + zm; k++) {
         for (j = ys; j < ys + ym; j++) {
             for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= r * r * hx * hy * hz * sin(lat[j]); } } }
+                a[k][j][i] *= r * r * hx * hy * hz * cos(lat[j]); } } }
 
     DMDAVecRestoreArray (da, b, &a);
 
