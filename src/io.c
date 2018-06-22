@@ -139,8 +139,11 @@ int file_read_3d (
     size_t count[4] = {1, zm, ym, xm};
     DMDAVecGetArray (da, v, &a);
     nc_inq_varid (ncid, varname, &id);
-    nc_get_vara_double (
-        ncid, id, start, count, &a[start[1]][start[2]][start[3]]);
+
+    info("Reading field %s[%d]\n", varname,time);
+
+    ERR(nc_get_vara_double (
+            ncid, id, start, count, &a[start[1]][start[2]][start[3]]));
     DMDAVecRestoreArray (da, v, &a);
     return (0);
 }
