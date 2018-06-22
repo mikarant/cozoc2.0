@@ -35,7 +35,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){
                         .type = TARGET_TYPE_FIELD,
                         .field =
-                            (Field){.write = false,
+                            (Field){.write = true,
                                     .name  = "cffdiab",
                                     .description =
                                         "Forcing due to diabatic heating",
@@ -47,7 +47,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
-                    (Field){.write = true,
+                    (Field){.write = false,
                             .name  = "cffvort",
                             .description =
                             "Forcing due to vorticity advection",
@@ -64,7 +64,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                             .description =
                             "Forcing due to temperature advection",
                             .units = 0,
-                            .vec   = ctx->Temperature_advection_forcing},
+                            .vec   = ctx->Temperature_advection},
                     .time = options.first - 1},
 
                 [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
@@ -125,7 +125,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = false,
+                        .write       = true,
                         .name        = "cozoc_ome_t",
                         .description = "Omega due to temperature advection",
                         .units       = "Pa s-1",
@@ -138,7 +138,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         .type = TARGET_TYPE_FIELD,
                         .field =
                             (Field){
-                                .write       = false,
+                                .write       = true,
                                 .name        = "cozoc_ome_q",
                                 .description = "Omega due to diabatic heating",
                                 .units       = "Pa s-1",
@@ -151,7 +151,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = false,
+                        .write       = true,
                         .name        = "cozoc_ome_f",
                         .description = "Omega due to friction",
                         .units       = "Pa s-1",
@@ -164,7 +164,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = false,
+                        .write       = true,
                         .name        = "cozoc_ome_a",
                         .description = "Omega due to imbalance term",
                         .units       = "Pa s-1",
@@ -252,6 +252,26 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                          .units       = "",
                                          .vec = ctx->Vorticity_tendency},
                              .time = options.first - 1},
+
+                [TARGET_FIELD_FRICTION_U_TENDENCY] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = false,
+                                 .name        = "FUtend",
+                                 .description = "Friction u tendency",
+                                 .units       = "",
+                                 .vec = ctx->Friction_u_tendency},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_FRICTION_V_TENDENCY] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = false,
+                                 .name        = "FVtend",
+                                 .description = "Friction v tendency",
+                                 .units       = "",
+                                 .vec = ctx->Friction_v_tendency},
+                         .time = options.first - 1},
         }};
 
     nc_redef (files.ncid_out);
