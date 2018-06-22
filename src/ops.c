@@ -106,11 +106,15 @@ int horizontal_rotor (
                 j1  = j + 1;
                 j0  = j - 1; }
 
+    // Note that y index increases to south!! => + sign in y-derivative
+
             for (i = xs; i < xs + xm; i++) {
-                b[k][j][i] = (r_inv) / cos(latitude[j]) *
-                    ((a[k][j][i + 1][1] - a[k][j][i - 1][1]) * wx -
-                     cos(latitude[j]) * ((a[k][j1][i][0] -
-                    a[k][j0][i][0]) * wyj)); } } }
+                b[k][j][i] = (r_inv) / cos(latitude[j]) *(
+                    (a[k][j][i + 1][1] - a[k][j][i - 1][1]) * wx
+                     + cos(latitude[j]) * ((a[k][j1][i][0]
+                     - a[k][j0][i][0]) * wyj)
+                     + a[k][j][i][0]*sin(latitude[j])
+                        ); } } }
 
     DMDAVecRestoreArrayDOFRead (da, avec, &a);
     DMDAVecRestoreArray (da, bvec, &b);
@@ -169,8 +173,8 @@ int horizontal_advection (Vec bvec, Vec Vvec, Context* ctx) {
 
             for (i = xs; i < xs + xm; i++) {
                 b[k][j][i] = (r_inv) * ( (1.0 / cos(latitude[j])) *
-                    (V[k][j][i][0] * (a[k][j][i + 1] - a[k][j][i - 1]) *
-                     wx) + V[k][j][i][1] * (a[k][j1][i] - a[k][j0][i]) * wyj); } } }
+                    (V[k][j][i][0] * (a[k][j][i + 1] - a[k][j][i - 1]) * wx)
+                   - V[k][j][i][1] * (a[k][j1][i] - a[k][j0][i]) * wyj); } } }
 
     DMDAVecRestoreArrayRead (da, avec, &a);
     DMDAVecRestoreArrayDOFRead (da, Vvec, &V);
@@ -344,7 +348,7 @@ int plaplace (Vec inout, Context* ctx) {
                     wx * (v[k][j][i + 1] - 2.0 * v[k][j][i] +
                           v[k][j][i - 1]) +
                     wy * (v[k][j1][i] - 2.0 * v[k][jj][i] + v[k][j0][i])
-                    - tan(lat[j]) * (v[k][j11][i] - v[k][j00][i]) * wyy
+                    + tan(lat[j]) * (v[k][j11][i] - v[k][j00][i]) * wyy
                     );
             } } }
 
