@@ -75,7 +75,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_FRICTION] =
                 (Rule){.prerequisites = 0,
-                       .recipe        = compute_friction},
+                       .recipe        = 0/*compute_friction*/},
 
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
                 (Rule){.prerequisites = 0, .recipe = read_field_3d},
@@ -99,7 +99,7 @@ Rules new_rules (void) {
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
-                   .recipe = 0/*compute_omega_component*/},
+                   .recipe = compute_omega_component},
 
             [TARGET_FIELD_OMEGA_Q] =
                 (Rule){.prerequisites = new_target_list (
@@ -126,7 +126,7 @@ Rules new_rules (void) {
                     TARGET_FIELD_VORTICITY_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
-                   .recipe = 0/*compute_omega_component*/},
+                   .recipe = compute_omega_component},
 
             [TARGET_FIELD_TOTAL_OMEGA] =
             (Rule){.prerequisites = new_target_list (
@@ -168,6 +168,13 @@ Rules new_rules (void) {
                 (Rule){.prerequisites =
                            new_target_list (TARGET_FIELD_HORIZONTAL_WIND),
                        .recipe = 0},
+
+            [TARGET_FIELD_FRICTION_U_TENDENCY] =
+            (Rule){.prerequisites = 0/*new_target_list(TARGET_FIELD_FRICTION)*/,
+                   .recipe = 0},
+            [TARGET_FIELD_FRICTION_V_TENDENCY] =
+            (Rule){.prerequisites = 0/*new_target_list(TARGET_FIELD_FRICTION)*/,
+                   .recipe = 0},
 
     }};
 
@@ -269,8 +276,9 @@ static void compute_friction (
 }
 
 static void compute_total_omega (TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    VecWAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_V],
-             ctx->omega[GENERALIZED_OMEGA_COMPONENT_T]);
+    VecZeroEntries(ctx->Total_omega);
+    VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_V]);
+    VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_T]);
     VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_F]);
     VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q]);
     VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]);

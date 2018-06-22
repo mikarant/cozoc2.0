@@ -23,8 +23,13 @@ struct Context {
     Vec          Diabatic_heating_forcing;
     Vec          Vorticity_advection_forcing;
     Vec          Temperature_advection_forcing;
+    Vec          Temperature_advection;
     Vec          Diabatic_heating_tendency;
     Vec          Friction;
+    Vec          Friction_u_tendency;
+    Vec          Friction_u;
+    Vec          Friction_v_tendency;
+    Vec          Friction_v;
     Vec          Geopotential_height;
     Vec          Horizontal_wind;
     Vec          omega[NUM_GENERALIZED_OMEGA_COMPONENTS];
@@ -51,8 +56,11 @@ int diabatic_heating_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, Vec Q,
     Vec Qtend, Context *ctx);
 int friction (Context *, const int ncid, const int time);
-int friction_tendency (
-    int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname,Vec F,
+int friction_u_tendency (
+    int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname, Vec F,
+    Vec Ftend, Context *ctx);
+int friction_v_tendency (
+    int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname, Vec F,
     Vec Ftend, Context *ctx);
 int horizontal_wind_and_vorticity_and_vorticity_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, DM da, DM da2,

@@ -60,7 +60,12 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection_forcing);
+    VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Friction_u_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Friction_u);
+    VecDuplicate (ctx.Temperature, &ctx.Friction_v_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Friction_v);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Total_omega);
@@ -265,7 +270,7 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
             VecCopy (zeta, zetatend);
             VecAXPY (zetatend, -1.0, zetanext);
             VecScale (zetatend, -1.0 / (double)(t[step + 1] - t[step]));
-        } else {
+    } else {
             horizontal_wind_and_vorticity (
             ncid, step - 1, da, da2, my, hx, hy, latitude, tmpvec, Vprev, zetaprev);
             horizontal_wind_and_vorticity (
@@ -316,13 +321,8 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
 int diabatic_heating (Context *ctx, const int ncid, const int step) {
 
     Vec           Q          = ctx->Diabatic_heating;
-
-    file_read_3d (ncid, step, "Q", Q);
-    //    if (false) {
-      diabatic_heating_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, 
+    diabatic_heating_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate,
                                  Q, ctx->Diabatic_heating_tendency,ctx);
-      //    }
-
     return (0);
 }
 
@@ -340,15 +340,22 @@ int diabatic_heating_tendency (
         VecDuplicate (ctx->Diabatic_heating_tendency, &tmpvec);
     }
 
-    if (step == first) {
-        if (first == 0) {
+    //    if (step == first) {
+    //    if (first == 0) {
+    if (step!=mt-1){
             file_read_3d (ncid, step, "Q", Q);
             file_read_3d (ncid, step + 1, "Q", Qnext);
 
             VecCopy (Q, Qtend);
-            VecAXPY (Qtend, -1.0, Qnext);
-            VecScale (Qtend, -1.0 / (double)(t[step + 1] - t[step]));
-        } else {
+            VecAXPY (Qtend, 0.5/*-1.0*/, Qnext);
+            VecScale (Qtend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+    } else{
+      file_read_3d (ncid, step, "Q", Q);
+      VecCopy (Q, Qtend);
+      VecScale (Qtend, 1.0/*-1.0*/ /  t[step]);
+    }
+
+/*    } else {
             file_read_3d (ncid, step - 1, "Q", Qprev);
             file_read_3d (ncid, step, "Q", Q);
             file_read_3d (ncid, step + 1, "Q", Qnext);
@@ -361,8 +368,8 @@ int diabatic_heating_tendency (
         if (step == mt - 1) {
             VecCopy (Q, Qprev);
             VecCopy (Qnext, Q);
-
             VecCopy (Qprev, Qtend);
+
             VecAXPY (Qtend, -1.0, Q);
             VecScale (Qtend, -1.0 / (double)(t[step] - t[step - 1]));
         } else {
@@ -375,43 +382,35 @@ int diabatic_heating_tendency (
             VecScale (Qtend, -1.0 / (double)(t[step + 1] - t[step - 1]));
         }
     }
-
+*/
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Qprev);
         VecDestroy (&Qnext);
     }
+
     return (0);
 }
 
 int friction (Context *ctx, const int ncid, const int step) {
 
-    DM            da         = ctx->da;
     Vec           F          = ctx->Friction;
-    Vec           tmp3d1,tmp3d2;
+    Vec           Fu          = ctx->Friction_u;
+    Vec           Fv          = ctx->Friction_v;
 
-    DMGetGlobalVector (da, &tmp3d1);
-    DMGetGlobalVector (da, &tmp3d2);
+    friction_u_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FU", Fu,
+                       ctx->Friction_u_tendency ,ctx);
 
-    friction_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FU",
-                       tmp3d1, tmp3d2,ctx);
+    VecStrideScatter (ctx->Friction_u_tendency, 0, F, INSERT_VALUES);
 
-
-    //    file_read_3d (ncid, step, "FU", tmp3d);
-    VecStrideScatter (tmp3d2, 0, F, INSERT_VALUES);
-    //    file_read_3d (ncid, step, "FV", tmp3d);
-
-    friction_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FV",
-                       tmp3d1, tmp3d2,ctx);
-    VecStrideScatter (tmp3d2, 1, F, INSERT_VALUES);
-
-    DMRestoreGlobalVector (da, &tmp3d1);
-    DMRestoreGlobalVector (da, &tmp3d2);
+    friction_v_tendency (ncid, step, ctx->first, ctx->mt, ctx->Time_coordinate, "FV", Fv,
+                        ctx->Friction_v_tendency, ctx);
+    VecStrideScatter (ctx->Friction_v_tendency, 1, F, INSERT_VALUES);
 
     return (0);
 }
 
-int friction_tendency (
+int friction_u_tendency (
     int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname, Vec F,
     Vec Ftend, Context *ctx) {
 
@@ -420,9 +419,67 @@ int friction_tendency (
     static Vec Fprev    = 0;
 
     if (!Fnext) {    // The first step
-        VecDuplicate (ctx->Diabatic_heating_tendency, &Fnext);
-        VecDuplicate (ctx->Diabatic_heating_tendency, &Fprev);
-        VecDuplicate (ctx->Diabatic_heating_tendency, &tmpvec);
+        VecDuplicate (ctx->Friction_u_tendency, &Fnext);
+        VecDuplicate (ctx->Friction_u_tendency, &Fprev);
+        VecDuplicate (ctx->Friction_u_tendency, &tmpvec);
+    }
+
+    if (step == first) {
+        if (first == 0) {
+            file_read_3d (ncid, step, varname, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (F, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step]));
+        } else {
+            file_read_3d (ncid, step - 1, varname, Fprev);
+            file_read_3d (ncid, step, varname, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    } else {
+        if (step == mt - 1) {
+            VecCopy (F, Fprev);
+            VecCopy (Fnext, F);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, F);
+            VecScale (Ftend, -1.0 / (double)(t[step] - t[step - 1]));
+        } else {
+            VecCopy (F, Fprev);
+            VecCopy (Fnext, F);
+            file_read_3d (ncid, step + 1, varname, Fnext);
+
+            VecCopy (Fprev, Ftend);
+            VecAXPY (Ftend, -1.0, Fnext);
+            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    }
+
+    if (step == ctx->last) {
+        VecDestroy (&tmpvec);
+        VecDestroy (&Fprev);
+        VecDestroy (&Fnext);
+    }
+    return (0);
+}
+
+int friction_v_tendency (
+    int ncid, size_t step, size_t first, size_t mt, double *t, const char *varname, Vec F,
+    Vec Ftend, Context *ctx) {
+
+    static Vec tmpvec   = 0;
+    static Vec Fnext    = 0;
+    static Vec Fprev    = 0;
+
+    if (!Fnext) {    // The first step
+        VecDuplicate (ctx->Friction_v_tendency, &Fnext);
+        VecDuplicate (ctx->Friction_v_tendency, &Fprev);
+        VecDuplicate (ctx->Friction_v_tendency, &tmpvec);
     }
 
     if (step == first) {
