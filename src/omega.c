@@ -277,7 +277,7 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
 
     Context*    ctx = (Context*) ctx_p;
     DM          da  = ctx->da;
-    Vec         Qatt   = ctx->Diabatic_heating_tendency;
+    Vec         Q   = ctx->Diabatic_heating_tendency;
     Vec          s    = ctx->Surface_attennuation;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
@@ -287,7 +287,7 @@ extern PetscErrorCode omega_compute_rhs_F_Q (
     PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
     const double r = earth_radius;
 
-    VecCopy (Qatt, b);
+    VecCopy (Q, b);
 
     VecPointwiseMult(b, s, b);
     plaplace (b, ctx);

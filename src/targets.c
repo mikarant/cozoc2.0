@@ -12,36 +12,12 @@ Targets new_targets (Options options, Files files, Context *ctx) {
 
                 [TARGET_FIELD_DIABATIC_HEATING] =
                     (Target){.type  = TARGET_TYPE_FIELD,
-                             .field = (Field){.write       = false,
+                             .field = (Field){.write       = true,
                                               .name        = "Q",
                                               .description = "Diabatic heating",
                                               .units       = "K s**-1",
                                               .vec = ctx->Diabatic_heating},
                              .time = options.first - 1},
-
-                [TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED] =
-                    (Target){
-                        .type = TARGET_TYPE_FIELD,
-                        .field =
-                            (Field){.write       = false,
-                                    .name        = "Qatt",
-                                    .description = "Diabatic heating with "
-                                                   "surface attennuation",
-                                    .units = "K s**-1",
-                                    .vec   = ctx->Diabatic_heating_attennuated},
-                        .time = options.first - 1},
-
-                [TARGET_FIELD_DIABATIC_HEATING_FORCING] =
-                    (Target){
-                        .type = TARGET_TYPE_FIELD,
-                        .field =
-                            (Field){.write = true,
-                                    .name  = "cffdiab",
-                                    .description =
-                                        "Forcing due to diabatic heating",
-                                    .units = 0,
-                                    .vec   = ctx->Diabatic_heating_forcing},
-                        .time = options.first - 1},
 
                 [TARGET_FIELD_VORTICITY_ADVECTION] =
                 (Target){
@@ -200,7 +176,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_TEMPERATURE] =
                     (Target){.type  = TARGET_TYPE_FIELD,
                              .field = (Field){.write       = false,
-                                              .name        = "TT",
+                                              .name        = "T",
                                               .description = "Temperature",
                                               .units       = "K",
                                               .vec         = 0},
@@ -210,7 +186,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){.type = TARGET_TYPE_FIELD,
                              .field =
                                  (Field){.write       = false,
-                                         .name        = "dT",
+                                         .name        = "Ttend",
                                          .description = "Temperature tendency",
                                          .units       = "K -s",
                                          .vec         = 0},
@@ -247,7 +223,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){.type = TARGET_TYPE_FIELD,
                              .field =
                                  (Field){.write       = false,
-                                         .name        = "dzeta",
+                                         .name        = "zetatend",
                                          .description = "Vorticity tendency",
                                          .units       = "",
                                          .vec = ctx->Vorticity_tendency},
