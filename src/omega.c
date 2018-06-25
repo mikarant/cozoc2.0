@@ -138,6 +138,7 @@ extern PetscErrorCode omega_compute_rhs_F_V (
     Vec          V    = ctx->Horizontal_wind;
     Vec          s    = ctx->Surface_attennuation;
     PetscScalar* f    = ctx->Coriolis_parameter;
+    Vec          vadv = ctx->Vorticity_advection;
     PetscScalar  hx   = ctx->hx;
     PetscScalar  hy   = ctx->hy;
     PetscScalar  hz   = ctx->hz;
@@ -146,13 +147,17 @@ extern PetscErrorCode omega_compute_rhs_F_V (
     PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
     const double r = earth_radius;
 
-    VecCopy (zeta, b);
+/*    VecCopy (zeta, b);
 
     field_array1d_add (b, f, DMDA_Y);
 
 
     horizontal_advection (b, V, ctx);
-
+    VecCopy (b, vadv);
+    VecScale(vadv,-1.0);
+*/
+    VecCopy(vadv,b);
+    VecScale(b,-1.0);
     VecPointwiseMult(b, s, b);
     fpder (da, mz, f, p, b);
 

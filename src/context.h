@@ -22,6 +22,7 @@ struct Context {
     Vec          Diabatic_heating_attennuated;
     Vec          Diabatic_heating_forcing;
     Vec          Vorticity_advection_forcing;
+    Vec          Vorticity_advection;
     Vec          Temperature_advection_forcing;
     Vec          Temperature_advection;
     Vec          Diabatic_heating_tendency;

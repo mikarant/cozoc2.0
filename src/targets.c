@@ -43,16 +43,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                     .vec   = ctx->Diabatic_heating_forcing},
                         .time = options.first - 1},
 
-                [TARGET_FIELD_VORTICITY_ADVECTION_FORCING] =
+                [TARGET_FIELD_VORTICITY_ADVECTION] =
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
-                    (Field){.write = false,
-                            .name  = "cffvort",
+                    (Field){.write = true,
+                            .name  = "vadv",
                             .description =
-                            "Forcing due to vorticity advection",
+                            "Vorticity advection",
                             .units = 0,
-                            .vec   = ctx->Vorticity_advection_forcing},
+                            .vec   = ctx->Vorticity_advection},
                     .time = options.first - 1},
 
                 [TARGET_FIELD_TEMPERATURE_ADVECTION_FORCING] =

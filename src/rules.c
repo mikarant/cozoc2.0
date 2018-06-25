@@ -16,7 +16,7 @@ compute_diabatic_heating (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_diabatic_heating_forcing (TARGET, Targets *, const Rules *, Context *);
 static void
-            compute_vorticity_advection_forcing (TARGET, Targets *, const Rules *, Context *);
+            compute_vorticity_advection (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_temperature_advection_forcing (TARGET, Targets *, const Rules *, Context *);
 static void compute_friction (TARGET, Targets *, const Rules *, Context *);
@@ -50,11 +50,11 @@ Rules new_rules (void) {
                            TARGET_FIELD_DIABATIC_HEATING),
                        .recipe = compute_surface_attennuation},
 
-            [TARGET_FIELD_VORTICITY_ADVECTION_FORCING] =
+            [TARGET_FIELD_VORTICITY_ADVECTION] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_VORTICITY,
                     TARGET_FIELD_HORIZONTAL_WIND),
-                   .recipe = compute_vorticity_advection_forcing},
+                   .recipe = compute_vorticity_advection},
 
             [TARGET_FIELD_TEMPERATURE_ADVECTION_FORCING] =
             (Rule){.prerequisites = new_target_list (
@@ -86,8 +86,9 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_V] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_VORTICITY_ADVECTION,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
-                    TARGET_FIELD_HORIZONTAL_WIND,
+                    //TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
@@ -381,9 +382,25 @@ static void compute_diabatic_heating_forcing (
     omega_compute_rhs_F_Q (ctx->ksp, ctx->Diabatic_heating_forcing, ctx);
 }
 
-static void compute_vorticity_advection_forcing (
+static void compute_vorticity_advection (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    omega_compute_rhs_F_V (ctx->ksp, ctx->Vorticity_advection_forcing, ctx);
+    Vec          V    = ctx->Horizontal_wind;
+    Vec          zeta = ctx->Vorticity;
+    PetscScalar* f    = ctx->Coriolis_parameter;
+    Vec          vadv = ctx->Vorticity_advection;
+    Vec          b;
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (zeta, b);
+
+    field_array1d_add (b, f, DMDA_Y);
+
+
+    horizontal_advection (b, V, ctx);
+    VecCopy (b, vadv);
+    VecScale(vadv,-1.0);
+    DMRestoreGlobalVector (ctx->da, &b);
+//    omega_compute_rhs_F_V (ctx->ksp, ctx->Vorticity_advection_forcing, ctx);
 }
 
 static void compute_temperature_advection_forcing (
