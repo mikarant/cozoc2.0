@@ -19,18 +19,6 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                               .vec = ctx->Diabatic_heating},
                              .time = options.first - 1},
 
-                [TARGET_FIELD_DIABATIC_HEATING_FORCING] =
-                    (Target){
-                        .type = TARGET_TYPE_FIELD,
-                        .field =
-                            (Field){.write = true,
-                                    .name  = "cffdiab",
-                                    .description =
-                                        "Forcing due to diabatic heating",
-                                    .units = 0,
-                                    .vec   = ctx->Diabatic_heating_forcing},
-                        .time = options.first - 1},
-
                 [TARGET_FIELD_VORTICITY_ADVECTION] =
                 (Target){
                     .type = TARGET_TYPE_FIELD,
@@ -201,7 +189,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                          .name        = "dT",
                                          .description = "Temperature tendency",
                                          .units       = "K -s",
-                                         .vec         = 0},
+                                         .vec         = ctx->Temperature_tendency},
                              .time = options.first - 1},
 
                 [TARGET_FIELD_SIGMA_PARAMETER] =
