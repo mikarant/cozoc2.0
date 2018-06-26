@@ -40,7 +40,7 @@ Rules new_rules (void) {
     Rules rules = {{
             [TARGET_FIELD_DIABATIC_HEATING] =
                 (Rule){.prerequisites = 0,
-                       .recipe        = 0/*compute_diabatic_heating*/},
+                       .recipe        = 0},
 
             [TARGET_FIELD_VORTICITY_ADVECTION] =
             (Rule){.prerequisites = new_target_list (
@@ -82,7 +82,6 @@ Rules new_rules (void) {
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_TEMPERATURE_ADVECTION,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
-                    TARGET_FIELD_TEMPERATURE,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
@@ -91,7 +90,6 @@ Rules new_rules (void) {
                 (Rule){.prerequisites = new_target_list (
                         TARGET_FIELD_SURFACE_ATTENNUATION,
                         TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
-                        TARGET_FIELD_HORIZONTAL_WIND,
                         TARGET_FIELD_SIGMA_PARAMETER,
                         TARGET_FIELD_VORTICITY),
                        .recipe = compute_omega_component},
@@ -99,8 +97,8 @@ Rules new_rules (void) {
             [TARGET_FIELD_OMEGA_F] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_SURFACE_ATTENNUATION,
-                    TARGET_FIELD_FRICTION,
-                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_FRICTION_U_TENDENCY,
+                    TARGET_FIELD_FRICTION_V_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = 0/*compute_omega_component*/},
@@ -108,7 +106,7 @@ Rules new_rules (void) {
             [TARGET_FIELD_OMEGA_A] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_SURFACE_ATTENNUATION,
-                    TARGET_FIELD_TEMPERATURE_TENDENCY,
+                    TARGET_FIELD_TEMPERATURE,
                     TARGET_FIELD_VORTICITY_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
@@ -156,10 +154,10 @@ Rules new_rules (void) {
                        .recipe = 0},
 
             [TARGET_FIELD_FRICTION_U_TENDENCY] =
-            (Rule){.prerequisites = 0/*new_target_list(TARGET_FIELD_FRICTION)*/,
+            (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
             [TARGET_FIELD_FRICTION_V_TENDENCY] =
-            (Rule){.prerequisites = 0/*new_target_list(TARGET_FIELD_FRICTION)*/,
+            (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
 
     }};
