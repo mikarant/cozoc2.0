@@ -40,7 +40,7 @@ Rules new_rules (void) {
     Rules rules = {{
             [TARGET_FIELD_DIABATIC_HEATING] =
                 (Rule){.prerequisites = 0,
-                       .recipe        = compute_diabatic_heating},
+                       .recipe        = 0/*compute_diabatic_heating*/},
 
             [TARGET_FIELD_VORTICITY_ADVECTION] =
             (Rule){.prerequisites = new_target_list (
@@ -57,7 +57,7 @@ Rules new_rules (void) {
             [TARGET_FIELD_DIABATIC_HEATING_TENDENCY] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_DIABATIC_HEATING),
-                   .recipe = 0},
+                   .recipe = compute_diabatic_heating},
 
             [TARGET_FIELD_FRICTION] =
                 (Rule){.prerequisites = 0,
@@ -90,7 +90,7 @@ Rules new_rules (void) {
             [TARGET_FIELD_OMEGA_Q] =
                 (Rule){.prerequisites = new_target_list (
                         TARGET_FIELD_SURFACE_ATTENNUATION,
-                        TARGET_FIELD_DIABATIC_HEATING,
+                        TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
                         TARGET_FIELD_HORIZONTAL_WIND,
                         TARGET_FIELD_SIGMA_PARAMETER,
                         TARGET_FIELD_VORTICITY),
