@@ -56,14 +56,12 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
     VecDuplicate (ctx.Temperature, &ctx.Geopotential_height);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
-    VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
-    VecDuplicate (ctx.Temperature, &ctx.Temperature_advection_forcing);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Friction_u_tendency);
-    VecDuplicate (ctx.Temperature, &ctx.Friction_u);
     VecDuplicate (ctx.Temperature, &ctx.Friction_v_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Friction_u);
     VecDuplicate (ctx.Temperature, &ctx.Friction_v);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);

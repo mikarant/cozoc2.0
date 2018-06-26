@@ -361,7 +361,6 @@ static void compute_vorticity_advection (
 
 static void compute_temperature_advection (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    omega_compute_rhs_F_T (ctx->ksp, ctx->Temperature_advection_forcing, ctx);
     Vec          V    = ctx->Horizontal_wind;
     Vec          T = ctx->Temperature;
     Vec          tadv = ctx->Temperature_advection;
