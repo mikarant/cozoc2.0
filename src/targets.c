@@ -55,14 +55,14 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                             .vec   = ctx->Vorticity_advection},
                     .time = options.first - 1},
 
-                [TARGET_FIELD_TEMPERATURE_ADVECTION] =
+                [TARGET_FIELD_TEMPERATURE_ADVECTION_FORCING] =
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){.write = true,
-                            .name  = "tadv",
+                            .name  = "cfftemp",
                             .description =
-                            "Temperature advection",
+                            "Forcing due to temperature advection",
                             .units = 0,
                             .vec   = ctx->Temperature_advection},
                     .time = options.first - 1},
