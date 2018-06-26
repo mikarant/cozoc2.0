@@ -4,7 +4,7 @@
 #include "operators.h"
 
 #define NUM_TARGET_TYPE 2
-#define NUM_TARGET 22
+#define NUM_TARGET 24
 
 #define new_target_list(...)                                                   \
     _new_target_list (                                                         \
@@ -15,6 +15,8 @@ enum TARGET_TYPE { TARGET_TYPE_FIELD, TARGET_TYPE_OPERATOR };
 
 enum TARGET {
     TARGET_FIELD_DIABATIC_HEATING,
+    TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED,
+    TARGET_FIELD_DIABATIC_HEATING_FORCING,
     TARGET_FIELD_VORTICITY_ADVECTION,
     TARGET_FIELD_TEMPERATURE_ADVECTION,
     TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
