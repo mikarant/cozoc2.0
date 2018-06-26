@@ -36,7 +36,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){.write = true,
-                            .name  = "cfftemp",
+                            .name  = "tadv",
                             .description =
                             "Forcing due to temperature advection",
                             .units = 0,
@@ -166,7 +166,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         .type = TARGET_TYPE_FIELD,
                         .field =
                             (Field){.write = true,
-                                    .name  = "ATTENNUATION",
+                                    .name  = "Attenuation",
                                     .description =
                                         "Pressure level surface attennuation",
                                     .units = 0,
@@ -186,7 +186,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){.type = TARGET_TYPE_FIELD,
                              .field =
                                  (Field){.write       = false,
-                                         .name        = "dT",
+                                         .name        = "Ttend",
                                          .description = "Temperature tendency",
                                          .units       = "K -s",
                                          .vec         = ctx->Temperature_tendency},
@@ -223,7 +223,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){.type = TARGET_TYPE_FIELD,
                              .field =
                                  (Field){.write       = false,
-                                         .name        = "dzeta",
+                                         .name        = "zetatend",
                                          .description = "Vorticity tendency",
                                          .units       = "",
                                          .vec = ctx->Vorticity_tendency},

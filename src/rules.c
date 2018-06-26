@@ -23,15 +23,11 @@ static void
 compute_horizontal_wind_etc (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_omega_component (TARGET, Targets *, const Rules *, Context *);
-//static void compute_one_over_dry_air_mass_column (
-//    TARGET, Targets *, const Rules *, Context *);
 static void
 compute_temperature_and_tendency (TARGET, Targets *, const Rules *, Context *);
 static void
 compute_sigma_parameter (TARGET, Targets *, const Rules *, Context *);
-static void
-            compute_surface_attennuation (TARGET, Targets *, const Rules *, Context *);
-static void compute_surface_attennuation_factors (
+static void compute_surface_attennuation (
     TARGET, Targets *, const Rules *, Context *);
 static void read_field_2d (TARGET, Targets *, const Rules *, Context *);
 static void read_field_3d (TARGET, Targets *, const Rules *, Context *);
@@ -142,7 +138,7 @@ Rules new_rules (void) {
             [TARGET_FIELD_SURFACE_ATTENNUATION] =
                 (Rule){.prerequisites =
                            new_target_list (TARGET_FIELD_SURFACE_PRESSURE),
-                       .recipe = compute_surface_attennuation_factors},
+                       .recipe = compute_surface_attennuation},
 
             [TARGET_FIELD_VORTICITY] = (Rule){.prerequisites = new_target_list (
                                                   TARGET_FIELD_HORIZONTAL_WIND),
@@ -339,20 +335,9 @@ static void compute_sigma_parameter (
         ctx->Sigma_parameter);
 }
 
-static void compute_surface_attennuation_factors (
-    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    mul_fact (ctx, ctx->Surface_attennuation);
-}
-
 static void compute_surface_attennuation (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    info (
-        "Computing attennuation %zu, %zu\n", id,
-        rules->rule[id].prerequisites->this);
-    Vec y = targets->target[rules->rule[id].prerequisites->this].field.vec;
-    Vec x = ctx->Surface_attennuation;
-    Vec w = targets->target[id].field.vec;
-    VecPointwiseMult (w, x, y);
+    mul_fact (ctx, ctx->Surface_attennuation);
 }
 
 static void compute_vorticity_advection (
