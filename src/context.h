@@ -20,7 +20,6 @@ struct Context {
     PetscScalar *Latitude;
     Vec          Diabatic_heating;
     Vec          Diabatic_heating_forcing;
-    Vec          Vorticity_advection_forcing;
     Vec          Vorticity_advection;
     Vec          Temperature_advection_forcing;
     Vec          Temperature_advection;
