@@ -401,7 +401,7 @@ read_field_3d (TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
         targets->target[id].field.vec);
 }
 
-static void
+/*static void
 read_target (TARGET id, size_t time, Targets *targets, Context *ctx) {
     switch (targets->target[id].type) {
     case TARGET_TYPE_FIELD: {
@@ -418,7 +418,7 @@ read_target (TARGET id, size_t time, Targets *targets, Context *ctx) {
     }
 }
 
-/*
+
 void recipe (RULE id, Rules *rules) {
     Rule *field = &rules->field[id];
     field->step++;
