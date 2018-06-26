@@ -188,6 +188,7 @@ extern PetscErrorCode omega_compute_rhs_F_T (
     Vec         T   = ctx->Temperature;
     Vec         V   = ctx->Horizontal_wind;
     Vec          s    = ctx->Surface_attennuation;
+    Vec          tadv = ctx->Temperature_advection;
     PetscScalar hx  = ctx->hx;
     PetscScalar hy  = ctx->hy;
     PetscScalar hz  = ctx->hz;
@@ -196,9 +197,11 @@ extern PetscErrorCode omega_compute_rhs_F_T (
     PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
     const double r = earth_radius;
 
-    VecCopy (T, b);
-    horizontal_advection (b, V, ctx);
+//    VecCopy (T, b);
+//    horizontal_advection (b, V, ctx);
 
+    VecCopy (tadv, b);
+    VecScale(b,-1.0);
     VecPointwiseMult(b, s, b);
     plaplace (b, ctx);
 
