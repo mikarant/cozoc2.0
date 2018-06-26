@@ -19,7 +19,6 @@ struct Context {
     PetscScalar *Coriolis_parameter;
     PetscScalar *Latitude;
     Vec          Diabatic_heating;
-    Vec          Diabatic_heating_attennuated;
     Vec          Diabatic_heating_forcing;
     Vec          Vorticity_advection_forcing;
     Vec          Vorticity_advection;

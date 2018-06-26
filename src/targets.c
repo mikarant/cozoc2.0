@@ -19,18 +19,6 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                               .vec = ctx->Diabatic_heating},
                              .time = options.first - 1},
 
-                [TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED] =
-                    (Target){
-                        .type = TARGET_TYPE_FIELD,
-                        .field =
-                            (Field){.write       = false,
-                                    .name        = "Qatt",
-                                    .description = "Diabatic heating with "
-                                                   "surface attennuation",
-                                    .units = "K s**-1",
-                                    .vec   = ctx->Diabatic_heating_attennuated},
-                        .time = options.first - 1},
-
                 [TARGET_FIELD_DIABATIC_HEATING_FORCING] =
                     (Target){
                         .type = TARGET_TYPE_FIELD,

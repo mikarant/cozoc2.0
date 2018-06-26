@@ -44,12 +44,6 @@ Rules new_rules (void) {
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_diabatic_heating},
 
-            [TARGET_FIELD_DIABATIC_HEATING_ATTENNUATED] =
-                (Rule){.prerequisites = new_target_list (
-                           TARGET_FIELD_SURFACE_ATTENNUATION,
-                           TARGET_FIELD_DIABATIC_HEATING),
-                       .recipe = compute_surface_attennuation},
-
             [TARGET_FIELD_VORTICITY_ADVECTION] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_VORTICITY,
@@ -88,7 +82,6 @@ Rules new_rules (void) {
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_VORTICITY_ADVECTION,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
-                    //TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
