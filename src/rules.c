@@ -21,6 +21,7 @@ static void compute_friction (TARGET, Targets *, const Rules *, Context *);
 static void compute_total_omega (TARGET, Targets *, const Rules *, Context *);
 static void
 compute_horizontal_wind_etc (TARGET, Targets *, const Rules *, Context *);
+static void compute_omega_operator (TARGET, Targets *, const Rules *, Context *);
 static void
             compute_omega_component (TARGET, Targets *, const Rules *, Context *);
 static void
@@ -57,7 +58,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_FRICTION] =
                 (Rule){.prerequisites = 0,
-                       .recipe        = 0/*compute_friction*/},
+                       .recipe        = compute_friction},
 
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
                 (Rule){.prerequisites = 0, .recipe = read_field_3d},
@@ -66,8 +67,16 @@ Rules new_rules (void) {
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_horizontal_wind_etc},
 
+            [TARGET_FIELD_OMEGA_OPERATOR] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_HORIZONTAL_WIND),
+                   .recipe = compute_omega_operator},
+
             [TARGET_FIELD_OMEGA_V] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_OPERATOR,
                     TARGET_FIELD_VORTICITY_ADVECTION,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_SIGMA_PARAMETER,
@@ -76,6 +85,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_T] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_OPERATOR,
                     TARGET_FIELD_TEMPERATURE_ADVECTION,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_SIGMA_PARAMETER,
@@ -84,23 +94,26 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_OMEGA_Q] =
                 (Rule){.prerequisites = new_target_list (
-                        TARGET_FIELD_SURFACE_ATTENNUATION,
-                        TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
-                        TARGET_FIELD_SIGMA_PARAMETER,
-                        TARGET_FIELD_VORTICITY),
-                       .recipe = compute_omega_component},
+                    TARGET_FIELD_OMEGA_OPERATOR,
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
+                    TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_VORTICITY),
+                    .recipe = compute_omega_component},
 
             [TARGET_FIELD_OMEGA_F] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_OPERATOR,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_FRICTION_U_TENDENCY,
                     TARGET_FIELD_FRICTION_V_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
-                   .recipe = 0/*compute_omega_component*/},
+                   .recipe = compute_omega_component},
 
             [TARGET_FIELD_OMEGA_A] =
             (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_OPERATOR,
                     TARGET_FIELD_SURFACE_ATTENNUATION,
                     TARGET_FIELD_TEMPERATURE,
                     TARGET_FIELD_VORTICITY_TENDENCY,
@@ -264,9 +277,14 @@ static void compute_total_omega (TARGET id, Targets *targets, const Rules *rules
     VecAXPY(ctx->Total_omega,1.0,ctx->omega[GENERALIZED_OMEGA_COMPONENT_A]);
 }
 
-static void compute_omega_component (
+static void compute_omega_operator (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     KSPSetComputeOperators (ctx->ksp, omega_compute_operator, ctx);
+}
+
+static void compute_omega_component (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+//    KSPSetComputeOperators (ctx->ksp, omega_compute_operator, ctx);
 
     switch (id) {
     case TARGET_FIELD_OMEGA_V: {
