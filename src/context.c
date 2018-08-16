@@ -338,8 +338,8 @@ int diabatic_heating_tendency (
         VecDuplicate (ctx->Diabatic_heating_tendency, &tmpvec);
     }
 
-    //    if (step == first) {
-    //    if (first == 0) {
+    //if (step == first) {
+    //if (first == 0) {
     if (step!=mt-1){
             file_read_3d (ncid, step, "Q", Q);
             file_read_3d (ncid, step + 1, "Q", Qnext);
@@ -352,8 +352,8 @@ int diabatic_heating_tendency (
       VecCopy (Q, Qtend);
       VecScale (Qtend, 1.0/*-1.0*/ /  t[step]);
     }
-
-/*    } else {
+    /*
+    } else {
             file_read_3d (ncid, step - 1, "Q", Qprev);
             file_read_3d (ncid, step, "Q", Q);
             file_read_3d (ncid, step + 1, "Q", Qnext);
@@ -380,7 +380,7 @@ int diabatic_heating_tendency (
             VecScale (Qtend, -1.0 / (double)(t[step + 1] - t[step - 1]));
         }
     }
-*/
+    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Qprev);
@@ -422,15 +422,22 @@ int friction_u_tendency (
         VecDuplicate (ctx->Friction_u_tendency, &tmpvec);
     }
 
-    if (step == first) {
-        if (first == 0) {
+    //if (step == first) {
+    //    if (first == 0) {
+    if (step!=mt-1){
             file_read_3d (ncid, step, varname, F);
             file_read_3d (ncid, step + 1, varname, Fnext);
 
             VecCopy (F, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step]));
-        } else {
+            VecAXPY (Ftend, 0.5/*-1.0*/, Fnext);
+            VecScale (Ftend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+    } else{
+      file_read_3d (ncid, step, varname, F);
+      VecCopy (F, Ftend);
+      VecScale (Ftend, 1.0/*-1.0*/ /  t[step]);
+    }
+    /*
+    } else {
             file_read_3d (ncid, step - 1, varname, Fprev);
             file_read_3d (ncid, step, varname, F);
             file_read_3d (ncid, step + 1, varname, Fnext);
@@ -457,7 +464,7 @@ int friction_u_tendency (
             VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
         }
     }
-
+    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Fprev);
@@ -480,14 +487,21 @@ int friction_v_tendency (
         VecDuplicate (ctx->Friction_v_tendency, &tmpvec);
     }
 
-    if (step == first) {
-        if (first == 0) {
+    //if (step == first) {
+    //if (first == 0) {
+    if (step!=mt-1){
             file_read_3d (ncid, step, varname, F);
             file_read_3d (ncid, step + 1, varname, Fnext);
 
             VecCopy (F, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step]));
+            VecAXPY (Ftend, 0.5/*-1.0*/, Fnext);
+            VecScale (Ftend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+    } else{
+      file_read_3d (ncid, step, varname, F);
+      VecCopy (F, Ftend);
+      VecScale (Ftend, 1.0/*-1.0*/ /  t[step]);
+    }
+    /*
         } else {
             file_read_3d (ncid, step - 1, varname, Fprev);
             file_read_3d (ncid, step, varname, F);
@@ -515,7 +529,7 @@ int friction_v_tendency (
             VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
         }
     }
-
+    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Fprev);
