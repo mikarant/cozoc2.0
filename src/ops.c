@@ -184,7 +184,6 @@ int horizontal_advection (Vec bvec, Vec Vvec, Context* ctx) {
 
     return (0); }
 
-
 /* *
  * Operator coriolis parameter (or some other f[y]) times pressure
  * derivative,
