@@ -83,6 +83,18 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                               .vec = ctx->Horizontal_wind},
                              .time = options.first - 1},
 
+                [TARGET_FIELD_OMEGA_OPERATOR] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = false,
+                        .name        = "omega_operator",
+                        .description = "",
+                        .units       = "",
+                        .vec = 0 },
+                    .time = options.first - 1},
+
                 [TARGET_FIELD_OMEGA_V] =
                 (Target){
                     .type = TARGET_TYPE_FIELD,
