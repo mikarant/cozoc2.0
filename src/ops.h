@@ -40,9 +40,14 @@ int ellipticity_sigma_vorticity (
     Vec          sigmavec,
     Vec          zetavec,
     Vec          V);
-/*
+
+int fp2der (
+    DM da, PetscInt mz, PetscScalar* f, PetscScalar* p, Vec bvec);
+
 int xder (Vec bvec, Context* ctx);
 
 int yder (Vec bvec, Context* ctx);
-*/
+
+int tilting (Vec bvec, Vec Vvec, Context* ctx);
+
 #endif /* OPS_H */

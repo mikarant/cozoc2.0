@@ -11,23 +11,28 @@
 #include <petscksp.h>
 #include <stdbool.h>
 
-static void
-compute_diabatic_heating (TARGET, Targets *, const Rules *, Context *);
-static void
-            compute_vorticity_advection (TARGET, Targets *, const Rules *, Context *);
-static void
-            compute_temperature_advection (TARGET, Targets *, const Rules *, Context *);
-static void compute_friction (TARGET, Targets *, const Rules *, Context *);
-static void compute_total_omega (TARGET, Targets *, const Rules *, Context *);
-static void
-compute_horizontal_wind_etc (TARGET, Targets *, const Rules *, Context *);
-static void compute_omega_operator (TARGET, Targets *, const Rules *, Context *);
-static void
-            compute_omega_component (TARGET, Targets *, const Rules *, Context *);
-static void
-compute_temperature_and_tendency (TARGET, Targets *, const Rules *, Context *);
-static void
-compute_sigma_parameter (TARGET, Targets *, const Rules *, Context *);
+static void compute_diabatic_heating (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_geostrophic_vorticity_tendency (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vorticity_advection (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_temperature_advection (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_friction (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_total_omega (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_horizontal_wind_etc (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_omega_operator (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_omega_component (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_temperature_and_tendency (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_sigma_parameter (
+    TARGET, Targets *, const Rules *, Context *);
 static void compute_surface_attennuation (
     TARGET, Targets *, const Rules *, Context *);
 static void read_field_2d (TARGET, Targets *, const Rules *, Context *);
@@ -162,6 +167,17 @@ Rules new_rules (void) {
                            new_target_list (TARGET_FIELD_HORIZONTAL_WIND),
                        .recipe = 0},
 
+            [TARGET_FIELD_GEOSTROPHIC_VORTICITY_TENDENCY] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_TEMPERATURE,
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_VORTICITY_ADVECTION,
+                    TARGET_FIELD_TOTAL_OMEGA,
+                    TARGET_FIELD_FRICTION,
+                    TARGET_FIELD_DIABATIC_HEATING_TENDENCY),
+                   .recipe = compute_geostrophic_vorticity_tendency},
+
             [TARGET_FIELD_FRICTION_U_TENDENCY] =
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
@@ -256,6 +272,11 @@ void print_target_list (
         head = head->next;
     }
     info ("\n");
+}
+
+static void compute_geostrophic_vorticity_tendency (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    geostrophic_vorticity_tendency (ctx, ctx->ncid, targets->target[id].time);
 }
 
 static void compute_diabatic_heating (

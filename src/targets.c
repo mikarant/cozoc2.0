@@ -241,6 +241,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                          .vec = ctx->Vorticity_tendency},
                              .time = options.first - 1},
 
+                [TARGET_FIELD_GEOSTROPHIC_VORTICITY_TENDENCY] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "zetagtend",
+                                 .description = "Geostrophic vorticity tendency",
+                                 .units       = "",
+                                 .vec = ctx->Geostrophic_vorticity_tendency},
+                         .time = options.first - 1},
+
                 [TARGET_FIELD_FRICTION_U_TENDENCY] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =

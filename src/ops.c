@@ -479,3 +479,201 @@ int ellipticity_sigma_vorticity (
     DMDAVecRestoreArray (da, zetavec, &zetaraw);
 
     return (0);}
+
+/* *
+ * Operator coriolis parameter (or some other f[y]) times second pressure
+ * derivative,
+ * $ f \frac{\partial^{2}}{\partial p^{2}} $
+ *
+ * - one-sided derivatives at top and bottom boundaries
+ */
+
+int fp2der (
+    DM da, PetscInt mz, PetscScalar* f, PetscScalar* p, Vec bvec) {
+
+    PetscScalar    wz = 0.5 / (p[1] - p[0]);
+    Vec            avec;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    PetscScalar ***a, ***b;
+
+    DMGetLocalVector (da, &avec);
+    DMGlobalToLocalBegin (da, bvec, INSERT_VALUES, avec);
+    DMGlobalToLocalEnd (da, bvec, INSERT_VALUES, avec);
+
+    DMDAVecGetArrayRead (da, avec, &a);
+    DMDAVecGetArray (da, bvec, &b);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+    for (k = zs; k < zs + zm; k++) {
+        int         k0, k1, kk;
+        PetscScalar w;
+
+        if (k == 0) {
+            w  = wz;
+            k1 = k + 2;
+            kk = k + 1;
+            k0 = k; }
+        else if (k == mz - 1) {
+            w  = wz;
+            k1 = k;
+            kk = k - 1;
+            k0 = k - 2; }
+        else {
+            w  = wz;
+            k1 = k + 1;
+            k0 = k - 1;
+            kk = k; }
+
+        if (f == NULL)
+            for (j = ys; j < ys + ym; j++) {
+                for (i = xs; i < xs + xm; i++) {
+                    b[k][j][i] = (a[k1][j][i] - 2*a[kk][j][i] + a[k0][j][i])
+                        * (w*w); } }
+        else
+            for (j = ys; j < ys + ym; j++) {
+                for (i = xs; i < xs + xm; i++) {
+                    b[k][j][i] = f[j] * (a[k1][j][i] - 2*a[kk][j][i] + a[k0][j][i])
+                        * (w*w); } } }
+
+    DMDAVecRestoreArrayRead (da, avec, &a);
+    DMDAVecRestoreArray (da, bvec, &b);
+
+    DMRestoreLocalVector (da, &avec);
+
+    return (0); }
+
+int yder (Vec bvec, Context* ctx) {
+
+    DM              da = ctx->da;
+    PetscScalar     wy = 0.5 / ctx->hy;
+    PetscInt        my = ctx->my;
+    Vec             avec;
+    PetscInt        i, j, k, zs, ys, xs, zm, ym, xm;
+    PetscScalar  ***a, ***b;
+
+    DMGetLocalVector (da, &avec);
+    DMGlobalToLocalBegin (da, bvec, INSERT_VALUES, avec);
+    DMGlobalToLocalEnd (da, bvec, INSERT_VALUES, avec);
+
+    DMDAVecGetArrayRead (da, avec, &a);
+
+    DMDAVecGetArray (da, bvec, &b);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            int         j0, j1;
+            PetscScalar wyj;
+
+            if (j == 0) {
+                wyj = 2.0 * wy;
+                j1  = j + 1;
+                j0  = 0; }
+            else if (j == my - 1) {
+                wyj = 2.0 * wy;
+                j1  = j;
+                j0  = j - 1; }
+            else {
+                wyj = wy;
+                j1  = j + 1;
+                j0  = j - 1; }
+
+            for (i = xs; i < xs + xm; i++) {
+                b[k][j][i] = - (a[k][j1][i] - a[k][j0][i]) * wyj; } } }
+
+    DMDAVecRestoreArrayRead (da, avec, &a);
+    DMDAVecRestoreArray (da, bvec, &b);
+
+    DMRestoreLocalVector (da, &avec);
+
+    return(0);
+}
+
+int xder (Vec bvec, Context* ctx) {
+
+    DM              da = ctx->da;
+    PetscScalar     wx = 0.5 / ctx->hx;
+    Vec             avec;
+    PetscInt        i, j, k, zs, ys, xs, zm, ym, xm;
+    PetscScalar  ***a, ***b;
+    PetscScalar     *latitude = ctx->Latitude;
+
+    DMGetLocalVector (da, &avec);
+    DMGlobalToLocalBegin (da, bvec, INSERT_VALUES, avec);
+    DMGlobalToLocalEnd (da, bvec, INSERT_VALUES, avec);
+
+    DMDAVecGetArrayRead (da, avec, &a);
+
+    DMDAVecGetArray (da, bvec, &b);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                b[k][j][i] = (1.0 / cos(latitude[j])) *
+                    (a[k][j][i + 1] - a[k][j][i - 1]) * wx; } } }
+
+    DMDAVecRestoreArrayRead (da, avec, &a);
+    DMDAVecRestoreArray (da, bvec, &b);
+
+    DMRestoreLocalVector (da, &avec);
+
+    return(0);
+}
+
+int tilting (Vec bvec, Vec Vvec, Context* ctx) {
+
+    DM           da = ctx->da, da2 = ctx->da2;
+    PetscInt     mz = ctx->mz;
+    Vec          tmpvec1, tmpvec2;
+    Vec          omega = ctx->Total_omega;
+    PetscInt     zs, ys, xs, zm, ym, xm;
+    PetscScalar  ****V, ***tmpU, ***tmpV;
+    const double r_inv = 1.0 / earth_radius;
+    Vec          tmpUvec1,tmpVvec1;
+    PetscScalar  *p = ctx->Pressure;
+
+    DMGetGlobalVector (da, &tmpvec1);
+    DMGetGlobalVector (da, &tmpvec2);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMGetGlobalVector (da, &tmpUvec1);
+    DMGetGlobalVector (da, &tmpVvec1);
+    DMDAVecGetArrayDOFRead (da2, Vvec, &V);
+    DMDAVecGetArray (da, tmpUvec1, &tmpU);
+    DMDAVecGetArray (da, tmpVvec1, &tmpV);
+
+    for (int k = zs; k < zs + zm; k++) {
+        for (int j = ys; j < ys + ym; j++) {
+            for (int i = xs; i < xs + xm; i++) {
+                tmpU[k][j][i] = V[k][j][i][0];
+                tmpV[k][j][i] = V[k][j][i][1];
+            } } }
+    DMDAVecRestoreArray (da, tmpUvec1, &tmpU);
+    DMDAVecRestoreArray (da, tmpVvec1, &tmpV);
+
+    fpder (da, mz, NULL, p, tmpUvec1);
+    fpder (da, mz, NULL, p, tmpVvec1);
+
+    VecCopy (omega, tmpvec1);
+    yder (tmpvec1, ctx);
+
+    VecCopy (omega, tmpvec2);
+    xder (tmpvec2, ctx);
+
+    // 1st term
+    VecPointwiseMult (bvec, tmpUvec1, tmpvec1);
+
+    // 2rd term
+    VecPointwiseMult (tmpvec1, tmpVvec1, tmpvec2);
+
+    // Adding 2nd term to the 1st term
+    VecAXPY (bvec, -1.0, tmpvec1);
+
+    VecScale(bvec, r_inv);
+
+    return(0);
+        }

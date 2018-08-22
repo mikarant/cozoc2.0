@@ -65,6 +65,7 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Friction_v);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Geostrophic_vorticity_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Total_omega);
     for (size_t i = 0; i < NUM_GENERALIZED_OMEGA_COMPONENTS; i++) {
         VecDuplicate (ctx.Temperature, &ctx.omega[i]);
@@ -116,7 +117,7 @@ Context new_context (Options const options, Files const files) {
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = 80;// min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -538,6 +539,66 @@ int friction_v_tendency (
     return (0);
 }
 
+int geostrophic_vorticity_tendency (Context *ctx, const int ncid, const int step) {
+
+  DM           da        = ctx->da;
+  size_t       mz        = ctx->mz;
+  PetscScalar* p         = ctx->Pressure;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          zetagtend = ctx->Geostrophic_vorticity_tendency;
+  Vec          vadv      = ctx->Vorticity_advection;
+  Vec          omega     = ctx->Total_omega;
+  Vec          vort      = ctx->Vorticity;
+  Vec          F         = ctx->Friction;
+  Vec          tmpvec, tmpvec2, tmpvec3;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &tmpvec3);
+
+  // Calculate the streching term (nr 2)
+  VecCopy (vort,tmpvec);
+  fpder (da, mz, NULL, p, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  // Initialiaze geostrophic vorticity tendency with zeroes
+  VecZeroEntries(zetagtend);
+
+  // add vorticity advection term
+  VecAXPY(zetagtend,1.0,vadv);
+
+  // add streching term (with minus sign as in the equation)
+  VecAXPY (zetagtend, -1.0, tmpvec);
+
+  // Calculate the 3rd term
+  VecCopy (vort, tmpvec);
+  field_array1d_add (tmpvec, f, DMDA_Y);
+  VecCopy (omega,tmpvec2);
+  fpder (da, mz, NULL, p, tmpvec2);
+  VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
+
+  // Add the 3rd term
+  VecAXPY (zetagtend, 1.0, tmpvec3);
+
+  // Calculate tilting term
+  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+
+  // Add tilting term
+  VecAXPY (zetagtend, 1.0, tmpvec3);
+
+  // Calculate rotor of Friction
+  horizontal_rotor (da, ctx->da2, ctx->my, ctx->hx, ctx->hy, ctx->Latitude, F, tmpvec);
+
+  // Add friction term
+  VecAXPY (zetagtend, 1.0, tmpvec);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &tmpvec3);
+
+  return(0);
+}
 
 
 void update_context (size_t step, Files ncfile, Context *ctx) {
