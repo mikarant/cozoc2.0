@@ -4,7 +4,7 @@
 #include "operators.h"
 
 #define NUM_TARGET_TYPE 2
-#define NUM_TARGET 24
+#define NUM_TARGET 26
 
 #define new_target_list(...)                                                   \
     _new_target_list (                                                         \
@@ -35,7 +35,9 @@ enum TARGET {
     TARGET_FIELD_TEMPERATURE_TENDENCY,
     TARGET_FIELD_VORTICITY,
     TARGET_FIELD_VORTICITY_TENDENCY,
-    TARGET_FIELD_GEOSTROPHIC_VORTICITY_TENDENCY,
+    TARGET_FIELD_VORTICITY_TENDENCY_V,
+    TARGET_FIELD_VORTICITY_TENDENCY_T,
+    TARGET_FIELD_VORTICITY_TENDENCY_Q,
     TARGET_FIELD_FRICTION_U_TENDENCY,
     TARGET_FIELD_FRICTION_V_TENDENCY
 };

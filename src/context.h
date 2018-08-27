@@ -38,7 +38,9 @@ struct Context {
     Vec          Surface_attennuation;
     Vec          Vorticity;
     Vec          Vorticity_tendency;
-    Vec          Geostrophic_vorticity_tendency;
+    Vec          Vorticity_tendency_v;
+    Vec          Vorticity_tendency_t;
+    Vec          Vorticity_tendency_q;
 };
 
 Context new_context (Options, Files);
@@ -69,4 +71,7 @@ int temperature (
     Vec Ttend, Context *);
 int sigma_parameter (
     DM da, PetscInt mz, PetscScalar *p, Vec Tvec, Vec sigmavec);
-int geostrophic_vorticity_tendency (Context *, const int ncid, const int time);
+int vorticity_tendency_v (Context *);
+int vorticity_tendency_t (Context *);
+int vorticity_tendency_q (Context *);
+int calculate_static_stability (Context *, Vec bvec);

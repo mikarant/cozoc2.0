@@ -13,7 +13,11 @@
 
 static void compute_diabatic_heating (
     TARGET, Targets *, const Rules *, Context *);
-static void compute_geostrophic_vorticity_tendency (
+static void compute_vorticity_tendency_v (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vorticity_tendency_t (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vorticity_tendency_q (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_vorticity_advection (
     TARGET, Targets *, const Rules *, Context *);
@@ -167,20 +171,34 @@ Rules new_rules (void) {
                            new_target_list (TARGET_FIELD_HORIZONTAL_WIND),
                        .recipe = 0},
 
-            [TARGET_FIELD_GEOSTROPHIC_VORTICITY_TENDENCY] =
+            [TARGET_FIELD_VORTICITY_TENDENCY_V] =
             (Rule){.prerequisites = new_target_list (
-                    TARGET_FIELD_TEMPERATURE,
                     TARGET_FIELD_HORIZONTAL_WIND,
                     TARGET_FIELD_VORTICITY,
                     TARGET_FIELD_VORTICITY_ADVECTION,
-                    TARGET_FIELD_TOTAL_OMEGA,
-                    TARGET_FIELD_FRICTION,
+                    TARGET_FIELD_OMEGA_V),
+                   .recipe = compute_vorticity_tendency_v},
+
+            [TARGET_FIELD_VORTICITY_TENDENCY_T] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_OMEGA_T,
+                    TARGET_FIELD_TEMPERATURE_ADVECTION),
+                   .recipe = compute_vorticity_tendency_t},
+
+            [TARGET_FIELD_VORTICITY_TENDENCY_Q] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_OMEGA_Q,
                     TARGET_FIELD_DIABATIC_HEATING_TENDENCY),
-                   .recipe = compute_geostrophic_vorticity_tendency},
+                   .recipe = compute_vorticity_tendency_q},
 
             [TARGET_FIELD_FRICTION_U_TENDENCY] =
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
+
             [TARGET_FIELD_FRICTION_V_TENDENCY] =
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
@@ -274,9 +292,19 @@ void print_target_list (
     info ("\n");
 }
 
-static void compute_geostrophic_vorticity_tendency (
+static void compute_vorticity_tendency_v (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    geostrophic_vorticity_tendency (ctx, ctx->ncid, targets->target[id].time);
+    vorticity_tendency_v (ctx);
+}
+
+static void compute_vorticity_tendency_t (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    vorticity_tendency_t (ctx);
+}
+
+static void compute_vorticity_tendency_q (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    vorticity_tendency_q (ctx);
 }
 
 static void compute_diabatic_heating (

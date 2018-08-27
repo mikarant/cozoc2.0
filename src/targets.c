@@ -241,14 +241,34 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                          .vec = ctx->Vorticity_tendency},
                              .time = options.first - 1},
 
-                [TARGET_FIELD_GEOSTROPHIC_VORTICITY_TENDENCY] =
+                [TARGET_FIELD_VORTICITY_TENDENCY_V] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
                          (Field){.write       = true,
-                                 .name        = "zetagtend",
-                                 .description = "Geostrophic vorticity tendency",
+                                 .name        = "vtend_v",
+                                 .description = "Vorticity tendency due to vorticity advection",
                                  .units       = "",
-                                 .vec = ctx->Geostrophic_vorticity_tendency},
+                                 .vec = ctx->Vorticity_tendency_v},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_TENDENCY_T] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_t",
+                                 .description = "Vorticity tendency due to temperature advection",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_t},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_TENDENCY_Q] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_q",
+                                 .description = "Vorticity tendency due to diabatic heating",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_q},
                          .time = options.first - 1},
 
                 [TARGET_FIELD_FRICTION_U_TENDENCY] =
@@ -270,6 +290,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .units       = "",
                                  .vec = ctx->Friction_v_tendency},
                          .time = options.first - 1},
+
         }};
 
     nc_redef (files.ncid_out);

@@ -65,7 +65,9 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Friction_v);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
-    VecDuplicate (ctx.Temperature, &ctx.Geostrophic_vorticity_tendency);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_v);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_t);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_q);
     VecDuplicate (ctx.Temperature, &ctx.Total_omega);
     for (size_t i = 0; i < NUM_GENERALIZED_OMEGA_COMPONENTS; i++) {
         VecDuplicate (ctx.Temperature, &ctx.omega[i]);
@@ -117,7 +119,7 @@ Context new_context (Options const options, Files const files) {
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = 80;// min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -539,67 +541,318 @@ int friction_v_tendency (
     return (0);
 }
 
-int geostrophic_vorticity_tendency (Context *ctx, const int ncid, const int step) {
+/*int zwack_okossi (Context *ctx, Vec bvec) {
+
+  DM           da        = ctx->da;
+  DM           daxy      = ctx->daxy;
+  const double R         = Specific_gas_constant_of_dry_air;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          zetagtend = ctx->Geostrophic_vorticity_tendency;
+  Vec          tadv      = ctx->Temperature_advection;
+  Vec          omega     = ctx->Total_omega;
+  Vec          Q         = ctx->Diabatic_heating_tendency;
+  Vec          sigma     = ctx->Sigma_parameter;
+  Vec          temptend,tmpvec, tmpvec2, inttemp, meantemp, meanzvec, inttot;
+  PetscScalar ***a, ***b, **c,***z, **meanz, ***barray, ***itarray;
+  PetscInt     i, j, k, zs, ys, xs, zm, ym, xm;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &inttemp);
+  DMGetGlobalVector (da, &temptend);
+  DMGetGlobalVector (da, &inttot);
+  DMGetGlobalVector (daxy, &meantemp);
+  DMGetGlobalVector (daxy, &meanzvec);
+
+  VecZeroEntries(inttot);
+  VecZeroEntries(meanzvec);
+  VecZeroEntries(temptend);
+  VecZeroEntries(meantemp);
+
+  VecAXPY(temptend, 1.0, tadv);
+
+  VecCopy(sigma, tmpvec);
+  calculate_static_stability(ctx, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  VecAXPY (temptend, 1.0, tmpvec2);
+
+  VecAXPY (temptend, 1.0, Q);
+
+  plaplace (temptend, ctx);
+
+  DMDAVecGetArray (da, temptend, &a);
+  VecZeroEntries(inttemp);
+
+  DMDAVecGetArray (da, inttemp, &b);
+  DMDAVecGetArray (daxy, meantemp, &c);
+  DMDAVecGetArrayRead (da, zetagtend, &z);
+  DMDAVecGetArray (daxy, meanzvec, &meanz);
+  DMDAVecGetArray (da, bvec, &barray);
+  DMDAVecGetArray (da, inttot, &itarray);
+
+  DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+  // Vertical average of geostrophic vorticity tendency (zetagtend)
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        meanz[j][i] = meanz[j][i] + z[k][j][i]; } } }
+
+  for (j = ys; j < ys + ym; j++) {
+    for (i = xs; i < xs + xm; i++) {
+      meanz[j][i] = meanz[j][i] / (zs + zm - 1); } }
+
+  // Multiply temptend by R/f and divide by k
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        a[k][j][i] =  (R/f[j]) * a[k][j][i] / (zs + zm - k);
+      } } }
+
+  // integrate temperature tendency
+  for (k = zs + 1; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        b[k][j][i] = b[k-1][j][i] + (a[k][j][i] + a[k-1][j][i]) / 2.0;
+      } } }
+
+  // take vertical average of integrated temperature tendency
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        c[j][i] = c[j][i] + b[k][j][i];
+      } } }
+
+  for (j = ys; j < ys + ym; j++) {
+    for (i = xs; i < xs + xm; i++) {
+      c[j][i] = c[j][i] / (zs + zm - 1);
+      } }
+
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        itarray[k][j][i] = -c[j][i] + b[k][j][i]; } } }
+
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        barray[k][j][i] = (meanz[j][i] + itarray[k][j][i]); } } }
+
+
+  DMDAVecRestoreArray (da, temptend, &a);
+  DMDAVecRestoreArray (da, inttemp, &b);
+  DMDAVecRestoreArray (daxy, meantemp, &c);
+  DMDAVecRestoreArray (da, bvec, &barray);
+  DMDAVecRestoreArray (da, inttot, &itarray);
+  DMDAVecRestoreArrayRead (da, zetagtend, &z);
+  DMDAVecRestoreArray (daxy, meanzvec, &meanz);
+
+  VecCopy(inttot, bvec);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &inttemp);
+  DMRestoreGlobalVector (da, &temptend);
+  DMRestoreGlobalVector (da, &inttot);
+  DMRestoreGlobalVector (daxy, &meantemp);
+  DMRestoreGlobalVector (daxy, &meanzvec);
+
+  return(0);
+  }*/
+
+int calculate_static_stability (Context *ctx, Vec bvec) {
+
+  DM           da    = ctx->da;
+  PetscScalar* p     = ctx->Pressure;
+  const double R     = Specific_gas_constant_of_dry_air;
+  PetscInt     i, j, k, zs, ys, xs, zm, ym, xm;
+  Vec          avec;
+  PetscScalar ***a, ***b;
+
+  DMGetLocalVector (da, &avec);
+  DMGlobalToLocalBegin (da, bvec, INSERT_VALUES, avec);
+  DMGlobalToLocalEnd (da, bvec, INSERT_VALUES, avec);
+
+  DMDAVecGetArrayRead (da, avec, &a);
+  DMDAVecGetArray (da, bvec, &b);
+
+  DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+
+  for (k = zs; k < zs + zm; k++) {
+    for (j = ys; j < ys + ym; j++) {
+      for (i = xs; i < xs + xm; i++) {
+        b[k][j][i] = (p[k] / R) * a[k][j][i];
+      } } }
+
+  DMDAVecRestoreArrayRead (da, avec, &a);
+  DMDAVecRestoreArray (da, bvec, &b);
+
+  DMRestoreLocalVector (da, &avec);
+
+  return(0);
+}
+
+int vorticity_tendency_v (Context *ctx) {
 
   DM           da        = ctx->da;
   size_t       mz        = ctx->mz;
   PetscScalar* p         = ctx->Pressure;
   PetscScalar* f         = ctx->Coriolis_parameter;
-  Vec          zetagtend = ctx->Geostrophic_vorticity_tendency;
+  Vec          vorttend  = ctx->Vorticity_tendency_v;
   Vec          vadv      = ctx->Vorticity_advection;
-  Vec          omega     = ctx->Total_omega;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_V];
   Vec          vort      = ctx->Vorticity;
-  Vec          F         = ctx->Friction;
-  Vec          tmpvec, tmpvec2, tmpvec3;
+  Vec          tmpvec, tmpvec2, tmpvec3,bvec;
 
   // Initialize some temporary vectors
   DMGetGlobalVector (da, &tmpvec);
   DMGetGlobalVector (da, &tmpvec2);
   DMGetGlobalVector (da, &tmpvec3);
+  DMGetGlobalVector (da, &bvec);
 
-  // Calculate the streching term (nr 2)
+  // Initialiaze  vorticity tendency with zeroes
+  VecZeroEntries(vorttend);
+
+  // add vorticity advection term
+  VecAXPY(vorttend,1.0,vadv);
+
+  // Calculate the vertical advection term (nr 2)
   VecCopy (vort,tmpvec);
   fpder (da, mz, NULL, p, tmpvec);
   VecPointwiseMult (tmpvec2, omega, tmpvec);
 
-  // Initialiaze geostrophic vorticity tendency with zeroes
-  VecZeroEntries(zetagtend);
+  // add vertical advection term (with minus sign as in the equation)
+  VecAXPY (vorttend, -1.0, tmpvec2);
 
-  // add vorticity advection term
-  VecAXPY(zetagtend,1.0,vadv);
-
-  // add streching term (with minus sign as in the equation)
-  VecAXPY (zetagtend, -1.0, tmpvec);
-
-  // Calculate the 3rd term
+  // Calculate the divergence term
   VecCopy (vort, tmpvec);
   field_array1d_add (tmpvec, f, DMDA_Y);
   VecCopy (omega,tmpvec2);
   fpder (da, mz, NULL, p, tmpvec2);
   VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
 
-  // Add the 3rd term
-  VecAXPY (zetagtend, 1.0, tmpvec3);
+  // Add the divergence term
+  VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
   tilting (tmpvec3, ctx->Horizontal_wind, ctx);
 
   // Add tilting term
-  VecAXPY (zetagtend, 1.0, tmpvec3);
-
-  // Calculate rotor of Friction
-  horizontal_rotor (da, ctx->da2, ctx->my, ctx->hx, ctx->hy, ctx->Latitude, F, tmpvec);
-
-  // Add friction term
-  VecAXPY (zetagtend, 1.0, tmpvec);
+  VecAXPY (vorttend, 1.0, tmpvec3);
 
   DMRestoreGlobalVector (da, &tmpvec);
   DMRestoreGlobalVector (da, &tmpvec2);
   DMRestoreGlobalVector (da, &tmpvec3);
+  DMRestoreGlobalVector (da, &bvec);
 
   return(0);
 }
 
+int vorticity_tendency_t (Context *ctx) {
+
+  DM           da        = ctx->da;
+  size_t       mz        = ctx->mz;
+  PetscScalar* p         = ctx->Pressure;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          vorttend  = ctx->Vorticity_tendency_t;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_T];
+  Vec          vort      = ctx->Vorticity;
+  Vec          tmpvec, tmpvec2, tmpvec3,bvec;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &tmpvec3);
+  DMGetGlobalVector (da, &bvec);
+
+  // Initialiaze  vorticity tendency with zeroes
+  VecZeroEntries(vorttend);
+
+  // Calculate the vertical advection term (nr 2)
+  VecCopy (vort,tmpvec);
+  fpder (da, mz, NULL, p, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  // add vertical advection term (with minus sign as in the equation)
+  VecAXPY (vorttend, -1.0, tmpvec2);
+
+  // Calculate the divergence term
+  VecCopy (vort, tmpvec);
+  field_array1d_add (tmpvec, f, DMDA_Y);
+  VecCopy (omega,tmpvec2);
+  fpder (da, mz, NULL, p, tmpvec2);
+  VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
+
+  // Add the divergence term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  // Calculate tilting term
+  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+
+  // Add tilting term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &tmpvec3);
+  DMRestoreGlobalVector (da, &bvec);
+
+  return(0);
+}
+
+int vorticity_tendency_q (Context *ctx) {
+
+  DM           da        = ctx->da;
+  size_t       mz        = ctx->mz;
+  PetscScalar* p         = ctx->Pressure;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          vorttend  = ctx->Vorticity_tendency_q;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q];
+  Vec          vort      = ctx->Vorticity;
+  Vec          tmpvec, tmpvec2, tmpvec3,bvec;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &tmpvec3);
+  DMGetGlobalVector (da, &bvec);
+
+  // Initialiaze geostrophic vorticity tendency with zeroes
+  VecZeroEntries(vorttend);
+
+  // Calculate the vertical advection term
+  VecCopy (vort,tmpvec);
+  fpder (da, mz, NULL, p, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  // add vertical advection term (with minus sign as in the equation)
+  VecAXPY (vorttend, -1.0, tmpvec2);
+
+  // Calculate the divergence term
+  VecCopy (vort, tmpvec);
+  field_array1d_add (tmpvec, f, DMDA_Y);
+  VecCopy (omega,tmpvec2);
+  fpder (da, mz, NULL, p, tmpvec2);
+  VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
+
+  // Add the divergence term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  // Calculate tilting term
+  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+
+  // Add tilting term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &tmpvec3);
+  DMRestoreGlobalVector (da, &bvec);
+
+  return(0);
+}
 
 void update_context (size_t step, Files ncfile, Context *ctx) {
 
