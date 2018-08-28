@@ -122,7 +122,7 @@ Context new_context (Options const options, Files const files) {
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = 10;//min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -897,8 +897,8 @@ int vorticity_tendency_a (Context *ctx) {
   size_t       mz        = ctx->mz;
   PetscScalar* p         = ctx->Pressure;
   PetscScalar* f         = ctx->Coriolis_parameter;
-  Vec          vorttend  = ctx->Vorticity_tendency_q;
-  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q];
+  Vec          vorttend  = ctx->Vorticity_tendency_a;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_A];
   Vec          vort      = ctx->Vorticity;
   Vec          tmpvec, tmpvec2, tmpvec3,bvec;
 
