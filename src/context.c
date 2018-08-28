@@ -121,7 +121,7 @@ Context new_context (Options const options, Files const files) {
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = 10;//min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -337,55 +337,29 @@ int diabatic_heating_tendency (
     static Vec Qnext    = 0;
     static Vec Qprev    = 0;
 
+    // This function has been tailored for the non-accumulated tendency fields
+
     if (!Qnext) {    // The first step
         VecDuplicate (ctx->Diabatic_heating_tendency, &Qnext);
         VecDuplicate (ctx->Diabatic_heating_tendency, &Qprev);
         VecDuplicate (ctx->Diabatic_heating_tendency, &tmpvec);
     }
 
-    //if (step == first) {
-    //if (first == 0) {
+    // Take the average of the current and the next step
     if (step!=mt-1){
             file_read_3d (ncid, step, "Q", Q);
             file_read_3d (ncid, step + 1, "Q", Qnext);
 
             VecCopy (Q, Qtend);
-            VecAXPY (Qtend, 0.5/*-1.0*/, Qnext);
-            VecScale (Qtend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+            VecAXPY (Qtend, 0.5, Qnext);
+            VecScale (Qtend, 1.0 / (double)(t[step + 1] - t[step]));
+    // For the last time step, take only the last one
     } else{
       file_read_3d (ncid, step, "Q", Q);
       VecCopy (Q, Qtend);
-      VecScale (Qtend, 1.0/*-1.0*/ /  t[step]);
+      VecScale (Qtend, 1.0 /  t[step]);
     }
-    /*
-    } else {
-            file_read_3d (ncid, step - 1, "Q", Qprev);
-            file_read_3d (ncid, step, "Q", Q);
-            file_read_3d (ncid, step + 1, "Q", Qnext);
 
-            VecCopy (Qprev, Qtend);
-            VecAXPY (Qtend, -1.0, Qnext);
-            VecScale (Qtend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    } else {
-        if (step == mt - 1) {
-            VecCopy (Q, Qprev);
-            VecCopy (Qnext, Q);
-            VecCopy (Qprev, Qtend);
-
-            VecAXPY (Qtend, -1.0, Q);
-            VecScale (Qtend, -1.0 / (double)(t[step] - t[step - 1]));
-        } else {
-            VecCopy (Q, Qprev);
-            VecCopy (Qnext, Q);
-            file_read_3d (ncid, step + 1, "Q", Qnext);
-
-            VecCopy (Qprev, Qtend);
-            VecAXPY (Qtend, -1.0, Qnext);
-            VecScale (Qtend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    }
-    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Qprev);
@@ -427,49 +401,19 @@ int friction_u_tendency (
         VecDuplicate (ctx->Friction_u_tendency, &tmpvec);
     }
 
-    //if (step == first) {
-    //    if (first == 0) {
     if (step!=mt-1){
             file_read_3d (ncid, step, varname, F);
             file_read_3d (ncid, step + 1, varname, Fnext);
 
             VecCopy (F, Ftend);
-            VecAXPY (Ftend, 0.5/*-1.0*/, Fnext);
-            VecScale (Ftend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+            VecAXPY (Ftend, 0.5, Fnext);
+            VecScale (Ftend, 1.0 / (double)(t[step + 1] - t[step]));
     } else{
       file_read_3d (ncid, step, varname, F);
       VecCopy (F, Ftend);
-      VecScale (Ftend, 1.0/*-1.0*/ /  t[step]);
+      VecScale (Ftend, 1.0 /  t[step]);
     }
-    /*
-    } else {
-            file_read_3d (ncid, step - 1, varname, Fprev);
-            file_read_3d (ncid, step, varname, F);
-            file_read_3d (ncid, step + 1, varname, Fnext);
 
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    } else {
-        if (step == mt - 1) {
-            VecCopy (F, Fprev);
-            VecCopy (Fnext, F);
-
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, F);
-            VecScale (Ftend, -1.0 / (double)(t[step] - t[step - 1]));
-        } else {
-            VecCopy (F, Fprev);
-            VecCopy (Fnext, F);
-            file_read_3d (ncid, step + 1, varname, Fnext);
-
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    }
-    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Fprev);
@@ -492,49 +436,19 @@ int friction_v_tendency (
         VecDuplicate (ctx->Friction_v_tendency, &tmpvec);
     }
 
-    //if (step == first) {
-    //if (first == 0) {
     if (step!=mt-1){
             file_read_3d (ncid, step, varname, F);
             file_read_3d (ncid, step + 1, varname, Fnext);
 
             VecCopy (F, Ftend);
-            VecAXPY (Ftend, 0.5/*-1.0*/, Fnext);
-            VecScale (Ftend, 1.0/*-1.0*/ / (double)(t[step + 1] - t[step]));
+            VecAXPY (Ftend, 0.5, Fnext);
+            VecScale (Ftend, 1.0 / (double)(t[step + 1] - t[step]));
     } else{
       file_read_3d (ncid, step, varname, F);
       VecCopy (F, Ftend);
-      VecScale (Ftend, 1.0/*-1.0*/ /  t[step]);
+      VecScale (Ftend, 1.0 /  t[step]);
     }
-    /*
-        } else {
-            file_read_3d (ncid, step - 1, varname, Fprev);
-            file_read_3d (ncid, step, varname, F);
-            file_read_3d (ncid, step + 1, varname, Fnext);
 
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    } else {
-        if (step == mt - 1) {
-            VecCopy (F, Fprev);
-            VecCopy (Fnext, F);
-
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, F);
-            VecScale (Ftend, -1.0 / (double)(t[step] - t[step - 1]));
-        } else {
-            VecCopy (F, Fprev);
-            VecCopy (Fnext, F);
-            file_read_3d (ncid, step + 1, varname, Fnext);
-
-            VecCopy (Fprev, Ftend);
-            VecAXPY (Ftend, -1.0, Fnext);
-            VecScale (Ftend, -1.0 / (double)(t[step + 1] - t[step - 1]));
-        }
-    }
-    */
     if (step == ctx->last) {
         VecDestroy (&tmpvec);
         VecDestroy (&Fprev);
