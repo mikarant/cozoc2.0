@@ -67,7 +67,9 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_v);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_t);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_f);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_q);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_a);
     VecDuplicate (ctx.Temperature, &ctx.Total_omega);
     for (size_t i = 0; i < NUM_GENERALIZED_OMEGA_COMPONENTS; i++) {
         VecDuplicate (ctx.Temperature, &ctx.omega[i]);
@@ -793,6 +795,65 @@ int vorticity_tendency_t (Context *ctx) {
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &tmpvec3);
+  DMRestoreGlobalVector (da, &bvec);
+
+  return(0);
+}
+
+int vorticity_tendency_f (Context *ctx) {
+
+  DM           da        = ctx->da;
+  size_t       mz        = ctx->mz;
+  PetscScalar* p         = ctx->Pressure;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          vorttend  = ctx->Vorticity_tendency_f;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_F];
+  Vec          F         = ctx->Friction;
+  Vec          vort      = ctx->Vorticity;
+  Vec          tmpvec, tmpvec2, tmpvec3,bvec;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &tmpvec3);
+  DMGetGlobalVector (da, &bvec);
+
+  // Initialiaze  vorticity tendency with zeroes
+  VecZeroEntries(vorttend);
+
+  // Calculate the vertical advection term (nr 2)
+  VecCopy (vort,tmpvec);
+  fpder (da, mz, NULL, p, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  // add vertical advection term (with minus sign as in the equation)
+  VecAXPY (vorttend, -1.0, tmpvec2);
+
+  // Calculate the divergence term
+  VecCopy (vort, tmpvec);
+  field_array1d_add (tmpvec, f, DMDA_Y);
+  VecCopy (omega,tmpvec2);
+  fpder (da, mz, NULL, p, tmpvec2);
+  VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
+
+  // Add the divergence term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  // Calculate tilting term
+  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+
+  // Add tilting term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  // Calculate friction term
+  horizontal_rotor (da, ctx->da2, ctx->my, ctx->hx, ctx->hy, ctx->Latitude, F, tmpvec);
+
+  // Add friction term
+  VecAXPY (vorttend, 1.0, tmpvec);
 
   DMRestoreGlobalVector (da, &tmpvec);
   DMRestoreGlobalVector (da, &tmpvec2);

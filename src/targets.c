@@ -261,6 +261,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Vorticity_tendency_t},
                          .time = options.first - 1},
 
+                [TARGET_FIELD_VORTICITY_TENDENCY_F] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_f",
+                                 .description = "Vorticity tendency due to friction",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_f},
+                         .time = options.first - 1},
+
                 [TARGET_FIELD_VORTICITY_TENDENCY_Q] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
@@ -269,6 +279,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .description = "Vorticity tendency due to diabatic heating",
                                  .units       = "",
                                  .vec = ctx->Vorticity_tendency_q},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_TENDENCY_A] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_a",
+                                 .description = "Vorticity tendency due to imbalance term",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_a},
                          .time = options.first - 1},
 
                 [TARGET_FIELD_FRICTION_U_TENDENCY] =

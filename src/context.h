@@ -40,7 +40,9 @@ struct Context {
     Vec          Vorticity_tendency;
     Vec          Vorticity_tendency_v;
     Vec          Vorticity_tendency_t;
+    Vec          Vorticity_tendency_f;
     Vec          Vorticity_tendency_q;
+    Vec          Vorticity_tendency_a;
 };
 
 Context new_context (Options, Files);
@@ -73,5 +75,7 @@ int sigma_parameter (
     DM da, PetscInt mz, PetscScalar *p, Vec Tvec, Vec sigmavec);
 int vorticity_tendency_v (Context *);
 int vorticity_tendency_t (Context *);
+int vorticity_tendency_f (Context *);
 int vorticity_tendency_q (Context *);
+int vorticity_tendency_a (Context *);
 int calculate_static_stability (Context *, Vec bvec);
