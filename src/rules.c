@@ -35,6 +35,8 @@ static void compute_omega_component (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_temperature_and_tendency (
     TARGET, Targets *, const Rules *, Context *);
+static void compute_geopotential_height_and_tendency (
+    TARGET, Targets *, const Rules *, Context *);
 static void compute_sigma_parameter (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_surface_attennuation (
@@ -70,7 +72,13 @@ Rules new_rules (void) {
                        .recipe        = compute_friction},
 
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
-                (Rule){.prerequisites = 0, .recipe = read_field_3d},
+                (Rule){.prerequisites = 0,
+                       .recipe = compute_geopotential_height_and_tendency},
+
+            [TARGET_FIELD_GEOPOTENTIAL_HEIGHT_TENDENCY] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_GEOPOTENTIAL_HEIGHT),
+                   .recipe = 0},
 
             [TARGET_FIELD_HORIZONTAL_WIND] =
                 (Rule){.prerequisites = 0,
@@ -392,6 +400,23 @@ static void compute_temperature_and_tendency (
 
     if (targets->target[id].time == ctx->last) {
         VecDestroy (&Tnext);
+    }
+}
+
+static void compute_geopotential_height_and_tendency (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    static Vec Znext = 0;
+
+    if (!Znext) {    // The first step
+        VecDuplicate (ctx->Geopotential_height, &Znext);
+    }
+
+    geopotential_height (
+        ctx->ncid, targets->target[id].time, ctx->first, ctx->mt,
+        ctx->Time_coordinate, ctx->Geopotential_height, ctx->Geopotential_height_tendency, ctx);
+
+    if (targets->target[id].time == ctx->last) {
+        VecDestroy (&Znext);
     }
 }
 

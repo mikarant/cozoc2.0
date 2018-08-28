@@ -74,6 +74,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                          .vec = ctx->Geopotential_height},
                              .time = options.first - 1},
 
+                [TARGET_FIELD_GEOPOTENTIAL_HEIGHT_TENDENCY] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "Ztend",
+                                 .description = "Geopotential height tendency",
+                                 .units       = 0,
+                                 .vec = ctx->Geopotential_height_tendency},
+                         .time = options.first - 1},
+
                 [TARGET_FIELD_HORIZONTAL_WIND] =
                     (Target){.type  = TARGET_TYPE_FIELD,
                              .field = (Field){.write       = false,

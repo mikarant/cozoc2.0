@@ -55,6 +55,7 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Surface_attennuation);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
     VecDuplicate (ctx.Temperature, &ctx.Geopotential_height);
+    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
@@ -186,6 +187,67 @@ int temperature (
         VecDestroy (&tmpvec);
         VecDestroy (&Tprev);
         VecDestroy (&Tnext);
+    }
+    return (0);
+}
+
+int geopotential_height (
+    int ncid, size_t step, size_t first, size_t mt, double *t, Vec Z,
+    Vec Ztend, Context *ctx) {
+
+    static Vec tmpvec   = 0;
+    static Vec Znext    = 0;
+    static Vec Zprev    = 0;
+
+    if (!Znext) {    // The first step
+        VecDuplicate (ctx->Geopotential_height, &Znext);
+        VecDuplicate (ctx->Geopotential_height, &Zprev);
+        VecDuplicate (ctx->Geopotential_height, &tmpvec);
+    }
+
+    if (step == first) {
+        if (first == 0) {
+            file_read_3d (ncid, step, "Z", Z);
+            file_read_3d (ncid, step + 1, "Z", Znext);
+
+            VecCopy (Z, Ztend);
+            VecAXPY (Ztend, -1.0, Znext);
+            VecScale (Ztend, -1.0 / (double)(t[step + 1] - t[step]));
+        } else {
+            file_read_3d (ncid, step - 1, "Z", Zprev);
+            file_read_3d (ncid, step, "Z", Z);
+            file_read_3d (ncid, step + 1, "Z", Znext);
+
+            VecCopy (Zprev, Ztend);
+            VecAXPY (Ztend, -1.0, Znext);
+            VecScale (Ztend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    } else {
+        if (step == mt - 1) {
+            VecCopy (Z, Zprev);
+            VecCopy (Znext, Z);
+
+            VecCopy (Zprev, Ztend);
+            VecAXPY (Ztend, -1.0, Z);
+            VecScale (Ztend, -1.0 / (double)(t[step] - t[step - 1]));
+        } else {
+            VecCopy (Z, Zprev);
+            VecCopy (Znext, Z);
+            file_read_3d (ncid, step + 1, "Z", Znext);
+
+            VecCopy (Zprev, Ztend);
+            VecAXPY (Ztend, -1.0, Znext);
+            VecScale (Ztend, -1.0 / (double)(t[step + 1] - t[step - 1]));
+        }
+    }
+
+    // Convert geopotential tendency to geopotential height tendency
+    VecScale (Ztend, 1 / 9.81);
+
+    if (step == ctx->last) {
+        VecDestroy (&tmpvec);
+        VecDestroy (&Zprev);
+        VecDestroy (&Znext);
     }
     return (0);
 }
@@ -778,6 +840,58 @@ int vorticity_tendency_f (Context *ctx) {
 }
 
 int vorticity_tendency_q (Context *ctx) {
+
+  DM           da        = ctx->da;
+  size_t       mz        = ctx->mz;
+  PetscScalar* p         = ctx->Pressure;
+  PetscScalar* f         = ctx->Coriolis_parameter;
+  Vec          vorttend  = ctx->Vorticity_tendency_q;
+  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_Q];
+  Vec          vort      = ctx->Vorticity;
+  Vec          tmpvec, tmpvec2, tmpvec3,bvec;
+
+  // Initialize some temporary vectors
+  DMGetGlobalVector (da, &tmpvec);
+  DMGetGlobalVector (da, &tmpvec2);
+  DMGetGlobalVector (da, &tmpvec3);
+  DMGetGlobalVector (da, &bvec);
+
+  // Initialiaze geostrophic vorticity tendency with zeroes
+  VecZeroEntries(vorttend);
+
+  // Calculate the vertical advection term
+  VecCopy (vort,tmpvec);
+  fpder (da, mz, NULL, p, tmpvec);
+  VecPointwiseMult (tmpvec2, omega, tmpvec);
+
+  // add vertical advection term (with minus sign as in the equation)
+  VecAXPY (vorttend, -1.0, tmpvec2);
+
+  // Calculate the divergence term
+  VecCopy (vort, tmpvec);
+  field_array1d_add (tmpvec, f, DMDA_Y);
+  VecCopy (omega,tmpvec2);
+  fpder (da, mz, NULL, p, tmpvec2);
+  VecPointwiseMult (tmpvec3, tmpvec, tmpvec2);
+
+  // Add the divergence term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  // Calculate tilting term
+  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+
+  // Add tilting term
+  VecAXPY (vorttend, 1.0, tmpvec3);
+
+  DMRestoreGlobalVector (da, &tmpvec);
+  DMRestoreGlobalVector (da, &tmpvec2);
+  DMRestoreGlobalVector (da, &tmpvec3);
+  DMRestoreGlobalVector (da, &bvec);
+
+  return(0);
+}
+
+int vorticity_tendency_a (Context *ctx) {
 
   DM           da        = ctx->da;
   size_t       mz        = ctx->mz;

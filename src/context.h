@@ -28,6 +28,7 @@ struct Context {
     Vec          Friction_v_tendency;
     Vec          Friction_v;
     Vec          Geopotential_height;
+    Vec          Geopotential_height_tendency;
     Vec          Horizontal_wind;
     Vec          omega[NUM_GENERALIZED_OMEGA_COMPONENTS];
     Vec          Total_omega;
@@ -71,6 +72,9 @@ int horizontal_wind_and_vorticity_and_vorticity_tendency (
 int temperature (
     int ncid, size_t step, size_t first, size_t mt, double *t, Vec T,
     Vec Ttend, Context *);
+int geopotential_height (
+    int ncid, size_t step, size_t first, size_t mt, double *t, Vec Z,
+    Vec Ztend, Context *);
 int sigma_parameter (
     DM da, PetscInt mz, PetscScalar *p, Vec Tvec, Vec sigmavec);
 int vorticity_tendency_v (Context *);
