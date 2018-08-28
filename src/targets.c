@@ -77,7 +77,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_GEOPOTENTIAL_HEIGHT_TENDENCY] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "Ztend",
                                  .description = "Geopotential height tendency",
                                  .units       = 0,

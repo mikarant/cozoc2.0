@@ -74,16 +74,16 @@ Rules new_rules (void) {
             [TARGET_FIELD_FRICTION] =
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_friction},
-
+/*
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
                 (Rule){.prerequisites = 0,
-                       .recipe = compute_geopotential_height_and_tendency},
+                       .recipe = 0},//compute_geopotential_height_and_tendency},
 
             [TARGET_FIELD_GEOPOTENTIAL_HEIGHT_TENDENCY] =
             (Rule){.prerequisites = new_target_list (
                     TARGET_FIELD_GEOPOTENTIAL_HEIGHT),
                    .recipe = 0},
-
+*/
             [TARGET_FIELD_HORIZONTAL_WIND] =
                 (Rule){.prerequisites = 0,
                        .recipe        = compute_horizontal_wind_etc},
