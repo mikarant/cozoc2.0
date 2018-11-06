@@ -120,7 +120,7 @@ Rules new_rules (void) {
                     TARGET_FIELD_DIABATIC_HEATING_TENDENCY,
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
-                    .recipe = compute_omega_component},
+		       .recipe = compute_omega_component},
 
             [TARGET_FIELD_OMEGA_F] =
             (Rule){.prerequisites = new_target_list (

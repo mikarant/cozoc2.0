@@ -54,8 +54,8 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Sigma_parameter);
     VecDuplicate (ctx.Temperature, &ctx.Surface_attennuation);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
-    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height);
-    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height_tendency);
+    //    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height);
+    //    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
@@ -87,7 +87,7 @@ Context new_context (Options const options, Files const files) {
         size_t start[1] = {0};
         size_t count[1] = {ctx.mt};
         file_read_array_double (
-            ncid, "XTIME", start, count, ctx.Time_coordinate);
+            ncid, "time", start, count, ctx.Time_coordinate);
 
         for (int i = 0; i < (int)ctx.mt; i++)
             ctx.Time_coordinate[i] *= (double)3600;
@@ -97,7 +97,8 @@ Context new_context (Options const options, Files const files) {
     {
         size_t start[1] = {0};
         size_t count[1] = {ctx.mz};
-        file_read_array_double (ncid, "LEV", start, count, ctx.Pressure);
+        file_read_array_double (ncid, "lev", start, count, 
+ctx.Pressure);
     }
 
     /* Latitude) */

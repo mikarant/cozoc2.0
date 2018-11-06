@@ -2,7 +2,7 @@ include (ide_support)
 include (AlwaysRPATH)
 include (BuildType)
 
-find_package (MPI REQUIRED)
+#find_package (MPI REQUIRED)
 find_package (PETSC REQUIRED)
 find_package (NETCDF REQUIRED)
 

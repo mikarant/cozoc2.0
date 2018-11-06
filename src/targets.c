@@ -23,7 +23,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
-                    (Field){.write = true,
+                    (Field){.write = false,
                             .name  = "vadv",
                             .description =
                             "Vorticity advection",
@@ -35,7 +35,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
-                    (Field){.write = true,
+                    (Field){.write = false,
                             .name  = "tadv",
                             .description =
                             "Forcing due to temperature advection",
@@ -63,26 +63,6 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                               .units       = 0,
                                               .vec         = ctx->Friction},
                              .time = options.first - 1},
-
-                [TARGET_FIELD_GEOPOTENTIAL_HEIGHT] =
-                    (Target){.type = TARGET_TYPE_FIELD,
-                             .field =
-                                 (Field){.write       = false,
-                                         .name        = "Z",
-                                         .description = "Geopotential height",
-                                         .units       = 0,
-                                         .vec = ctx->Geopotential_height},
-                             .time = options.first - 1},
-
-                [TARGET_FIELD_GEOPOTENTIAL_HEIGHT_TENDENCY] =
-                (Target){.type = TARGET_TYPE_FIELD,
-                         .field =
-                         (Field){.write       = false,
-                                 .name        = "Ztend",
-                                 .description = "Geopotential height tendency",
-                                 .units       = 0,
-                                 .vec = ctx->Geopotential_height_tendency},
-                         .time = options.first - 1},
 
                 [TARGET_FIELD_HORIZONTAL_WIND] =
                     (Target){.type  = TARGET_TYPE_FIELD,
@@ -175,7 +155,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     .type = TARGET_TYPE_FIELD,
                     .field =
                     (Field){
-                        .write       = true,
+                        .write       = false,
                         .name        = "cozoc_ome_tot",
                         .description = "Total calculated omega",
                         .units       = "Pa s-1",
@@ -187,7 +167,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                     (Target){
                         .type = TARGET_TYPE_FIELD,
                         .field =
-                            (Field){.write = true,
+                            (Field){.write = false,
                                     .name  = "Attenuation",
                                     .description =
                                         "Pressure level surface attennuation",
@@ -216,7 +196,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
 
                 [TARGET_FIELD_SIGMA_PARAMETER] =
                     (Target){.type  = TARGET_TYPE_FIELD,
-                             .field = (Field){.write       = true,
+                             .field = (Field){.write       = false,
                                               .name        = "sigma",
                                               .description = "Sigma parameter",
                                               .units       = "",
@@ -234,7 +214,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
 
                 [TARGET_FIELD_VORTICITY] =
                     (Target){.type  = TARGET_TYPE_FIELD,
-                             .field = (Field){.write       = true,
+                             .field = (Field){.write       = false,
                                               .name        = "zeta",
                                               .description = "Vorticity",
                                               .units       = "",
