@@ -48,6 +48,6 @@ int xder (Vec bvec, Context* ctx);
 
 int yder (Vec bvec, Context* ctx);
 
-int tilting (Vec bvec, Vec Vvec, Context* ctx);
+int tilting (Vec bvec, Vec Vvec, Vec omega, Context* ctx);
 
 #endif /* OPS_H */

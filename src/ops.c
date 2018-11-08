@@ -624,12 +624,11 @@ int xder (Vec bvec, Context* ctx) {
     return(0);
 }
 
-int tilting (Vec bvec, Vec Vvec, Context* ctx) {
+int tilting (Vec bvec, Vec Vvec, Vec omega, Context* ctx) {
 
     DM           da = ctx->da, da2 = ctx->da2;
     PetscInt     mz = ctx->mz;
     Vec          tmpvec1, tmpvec2;
-    Vec          omega = ctx->Total_omega;
     PetscInt     zs, ys, xs, zm, ym, xm;
     PetscScalar  ****V, ***tmpU, ***tmpV;
     const double r_inv = 1.0 / earth_radius;

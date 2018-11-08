@@ -1,3 +1,5 @@
+
+
 #include "context.h"
 #include "constants.h"
 #include "daslice.h"
@@ -54,8 +56,6 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Sigma_parameter);
     VecDuplicate (ctx.Temperature, &ctx.Surface_attennuation);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
-    //    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height);
-    //    VecDuplicate (ctx.Temperature, &ctx.Geopotential_height_tendency);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
@@ -716,7 +716,7 @@ int vorticity_tendency_v (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
@@ -768,7 +768,7 @@ int vorticity_tendency_t (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
@@ -821,7 +821,7 @@ int vorticity_tendency_f (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
@@ -879,7 +879,7 @@ int vorticity_tendency_q (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
@@ -931,7 +931,7 @@ int vorticity_tendency_a (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, ctx);
+  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);
