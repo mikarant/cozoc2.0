@@ -230,6 +230,11 @@ Rules new_rules (void) {
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_FRICTION),
                    .recipe = 0},
 
+            [TARGET_FIELD_STREAMFUNCTION] =
+            (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
+                   .recipe = 0/*compute_streamfunction*/},
+
+
     }};
 
     return rules;

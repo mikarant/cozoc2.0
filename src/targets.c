@@ -301,6 +301,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Friction_v_tendency},
                          .time = options.first - 1},
 
+                [TARGET_FIELD_STREAMFUNCTION] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "strf",
+                                 .description = "Streamfunction",
+                                 .units       = "m2 s-1",
+                                 .vec = ctx->Streamfunction},
+                         .time = options.first - 1},
+
         }};
 
     nc_redef (files.ncid_out);

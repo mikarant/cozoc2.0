@@ -44,6 +44,7 @@ struct Context {
     Vec          Vorticity_tendency_f;
     Vec          Vorticity_tendency_q;
     Vec          Vorticity_tendency_a;
+    Vec          Streamfunction;
 };
 
 Context new_context (Options, Files);
