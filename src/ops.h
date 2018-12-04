@@ -50,4 +50,7 @@ int yder (Vec bvec, Context* ctx);
 
 int tilting (Vec bvec, Vec Vvec, Vec omega, Context* ctx);
 
+extern PetscErrorCode strf_compute_operator (KSP ksp, Mat A, Mat B, void *ctx);
+
+extern PetscErrorCode strf_compute_rhs_vo (KSP ksp, Vec b, void* ctx_p);
 #endif /* OPS_H */
