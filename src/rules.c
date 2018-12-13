@@ -37,7 +37,7 @@ static void compute_omega_operator (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_omega_component (
     TARGET, Targets *, const Rules *, Context *);
-static void compute_streamfunction (
+static void read_streamfunction (
     TARGET, Targets *, const Rules *, Context *); 
 static void compute_temperature_and_tendency (
     TARGET, Targets *, const Rules *, Context *);
@@ -234,7 +234,7 @@ Rules new_rules (void) {
 
             [TARGET_FIELD_STREAMFUNCTION] =
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
-                   .recipe = compute_streamfunction},
+                   .recipe = 0/*read_streamfunction*/},
 
 
     }};
@@ -414,8 +414,9 @@ static void compute_omega_component (
     }
 }
 
-static void compute_streamfunction (
+static void read_streamfunction (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
+    
     KSPSetComputeOperators (ctx->ksp, strf_compute_operator, ctx);
     KSPSetComputeRHS (ctx->ksp, strf_compute_rhs_vo, ctx);
     KSPSolve (ctx->ksp, 0, ctx->Streamfunction);

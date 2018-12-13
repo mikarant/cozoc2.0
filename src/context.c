@@ -303,7 +303,8 @@ static int horizontal_wind_and_vorticity (
         VecStrideScatter (tmpvec, i, V, INSERT_VALUES);
     }
 
-    horizontal_rotor (da, da2, my, hx, hy, latitude, V, zeta);
+    file_read_3d (ncid, step, "VO", zeta);
+    //horizontal_rotor (da, da2, my, hx, hy, latitude, V, zeta);
     return (0);
 }
 
