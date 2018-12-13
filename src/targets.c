@@ -374,6 +374,19 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Vorticity_advection_by_vd},
                          .time = options.first - 1},
 
+                [TARGET_FIELD_OMEGA_VD] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = true,
+                        .name        = "cozoc_ome_vd",
+                        .description = "Omega due to divergent vorticity advection",
+                        .units       = "Pa s-1",
+                        .vec =
+                        ctx->omega_vd},
+                    .time = options.first - 1},
+
 
         }};
 

@@ -52,6 +52,7 @@ struct Context {
     Vec          Vorticity_advection_by_vr;
     Vec          Vorticity_advection_by_vd;
     Vec          omega_vr;
+    Vec          omega_vd;
 };
 
 Context new_context (Options, Files);

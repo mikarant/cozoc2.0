@@ -4,7 +4,7 @@
 #include "operators.h"
 
 #define NUM_TARGET_TYPE 2
-#define NUM_TARGET 34
+#define NUM_TARGET 35
 
 #define new_target_list(...)                                                   \
     _new_target_list (                                                         \
@@ -47,7 +47,8 @@ enum TARGET {
     TARGET_FIELD_V_ROTATIONAL_WIND,
     TARGET_FIELD_VORTICITY_ADVECTION_BY_VR,
     TARGET_FIELD_VORTICITY_ADVECTION_BY_VD,
-    TARGET_FIELD_OMEGA_VR
+    TARGET_FIELD_OMEGA_VR,
+    TARGET_FIELD_OMEGA_VD
 };
 
 typedef enum TARGET_TYPE TARGET_TYPE;

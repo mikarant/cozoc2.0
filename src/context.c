@@ -63,6 +63,7 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_by_vr);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_by_vd);
     VecDuplicate (ctx.Temperature, &ctx.omega_vr);
+    VecDuplicate (ctx.Temperature, &ctx.omega_vd);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);

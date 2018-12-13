@@ -25,6 +25,7 @@ extern PetscErrorCode omega_compute_rhs_F_F (KSP ksp, Vec b, void *ctx);
 extern PetscErrorCode omega_compute_rhs_F_Q (KSP ksp, Vec b, void *ctx);
 extern PetscErrorCode omega_compute_rhs_F_A (KSP ksp, Vec b, void *ctx);
 extern PetscErrorCode omega_compute_rhs_F_Vr (KSP ksp, Vec b, void *ctx);
+extern PetscErrorCode omega_compute_rhs_F_Vd (KSP ksp, Vec b, void *ctx);
 
 extern PetscErrorCode (*omega_compute_rhs[NUM_GENERALIZED_OMEGA_COMPONENTS]) (
     KSP ksp, Vec b, void *ctx);
