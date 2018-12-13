@@ -1,4 +1,5 @@
 #include "rules.h"
+#include "constants.h"
 #include "context.h"
 #include "equation.h"
 #include "fields.h"
@@ -39,6 +40,8 @@ static void compute_omega_component (
     TARGET, Targets *, const Rules *, Context *);
 static void read_streamfunction (
     TARGET, Targets *, const Rules *, Context *); 
+static void compute_ur (
+    TARGET, Targets *, const Rules *, Context *);
 static void compute_temperature_and_tendency (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_geopotential_height_and_tendency (
@@ -236,6 +239,13 @@ Rules new_rules (void) {
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
                    .recipe = read_streamfunction},
 
+            [TARGET_FIELD_U_ROTATIONAL_WIND] =
+            (Rule){.prerequisites = new_target_list(
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_STREAMFUNCTION),
+                   .recipe = compute_ur},
+
+
 
     }};
 
@@ -420,6 +430,25 @@ static void read_streamfunction (
 //    KSPSetComputeOperators (ctx->ksp, strf_compute_operator, ctx);
 //    KSPSetComputeRHS (ctx->ksp, strf_compute_rhs_vo, ctx);
 //    KSPSolve (ctx->ksp, 0, ctx->Streamfunction);
+}
+
+static void compute_ur (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
+    Vec          strf = ctx->Streamfunction;
+    Vec          ur = ctx->Ur;
+    Vec          b;
+    const double r_inv = 1.0 / earth_radius;
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (strf, b);    
+
+    yder (b, ctx);
+
+    VecScale(b,-1*r_inv);
+
+    VecCopy(b,ur);
+
+    DMRestoreGlobalVector (ctx->da, &b);
 }
 
 static void compute_horizontal_wind_etc (

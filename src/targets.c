@@ -311,6 +311,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Streamfunction},
                          .time = options.first - 1},
 
+                [TARGET_FIELD_U_ROTATIONAL_WIND] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "ur",
+                                 .description = "Rotational u wind component",
+                                 .units       = "m s-1",
+                                 .vec = ctx->Ur},
+                         .time = options.first - 1},
+
         }};
 
     nc_redef (files.ncid_out);
