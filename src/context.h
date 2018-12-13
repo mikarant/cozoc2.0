@@ -45,10 +45,13 @@ struct Context {
     Vec          Vorticity_tendency_q;
     Vec          Vorticity_tendency_a;
     Vec          Streamfunction;
+    Vec          Velocity_potential;
     Vec          Ur;
     Vec          Vr;
     Vec          Rotational_wind;
     Vec          Vorticity_advection_by_vr;
+    Vec          Vorticity_advection_by_vd;
+    Vec          omega_vr;
 };
 
 Context new_context (Options, Files);

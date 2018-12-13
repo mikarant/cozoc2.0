@@ -311,6 +311,16 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Streamfunction},
                          .time = options.first - 1},
 
+                [TARGET_FIELD_VELOCITY_POTENTIAL] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vpot",
+                                 .description = "Velocity potential",
+                                 .units       = "m2 s-1",
+                                 .vec = ctx->Velocity_potential},
+                         .time = options.first - 1},
+
                 [TARGET_FIELD_U_ROTATIONAL_WIND] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
@@ -339,6 +349,29 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .description = "Vorticity advection by rotational wind",
                                  .units       = " ",
                                  .vec = ctx->Vorticity_advection_by_vr},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_OMEGA_VR] =
+                (Target){
+                    .type = TARGET_TYPE_FIELD,
+                    .field =
+                    (Field){
+                        .write       = true,
+                        .name        = "cozoc_ome_vr",
+                        .description = "Omega due to rotational vorticity advection",
+                        .units       = "Pa s-1",
+                        .vec =
+                        ctx->omega_vr},
+                    .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_ADVECTION_BY_VD] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vadvd",
+                                 .description = "Vorticity advection by divergent wind",
+                                 .units       = " ",
+                                 .vec = ctx->Vorticity_advection_by_vd},
                          .time = options.first - 1},
 
 

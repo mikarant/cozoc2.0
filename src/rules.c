@@ -40,11 +40,15 @@ static void compute_omega_component (
     TARGET, Targets *, const Rules *, Context *);
 static void read_streamfunction (
     TARGET, Targets *, const Rules *, Context *); 
+static void read_velocity_potential (
+    TARGET, Targets *, const Rules *, Context *); 
 static void compute_ur (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_vr (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_vadvr (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vadvd (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_temperature_and_tendency (
     TARGET, Targets *, const Rules *, Context *);
@@ -243,6 +247,10 @@ Rules new_rules (void) {
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
                    .recipe = read_streamfunction},
 
+            [TARGET_FIELD_VELOCITY_POTENTIAL] =
+            (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
+                   .recipe = read_velocity_potential},
+
             [TARGET_FIELD_U_ROTATIONAL_WIND] =
             (Rule){.prerequisites = new_target_list(
                     TARGET_FIELD_VORTICITY,
@@ -262,6 +270,12 @@ Rules new_rules (void) {
                     TARGET_FIELD_U_ROTATIONAL_WIND,
                     TARGET_FIELD_V_ROTATIONAL_WIND),
                    .recipe = compute_vadvr},
+
+            [TARGET_FIELD_VORTICITY_ADVECTION_BY_VD] =
+            (Rule){.prerequisites = new_target_list(
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_VELOCITY_POTENTIAL),
+                   .recipe = compute_vadvd},
 
             [TARGET_FIELD_OMEGA_VR] =
             (Rule){.prerequisites = new_target_list (
@@ -462,6 +476,12 @@ static void read_streamfunction (
 //    KSPSolve (ctx->ksp, 0, ctx->Streamfunction);
 }
 
+static void read_velocity_potential (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
+    file_read_3d (ctx->ncid, targets->target[id].time, "VPOT", ctx->Velocity_potential);
+}
+
+
 static void compute_ur (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
     Vec          strf = ctx->Streamfunction;
@@ -500,6 +520,45 @@ static void compute_vr (
     DMRestoreGlobalVector (ctx->da, &b);
 }
 
+static void compute_vadvd (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    Vec          vpot = ctx->Velocity_potential;
+    Vec          Vd;
+    //Vec          vd = ctx->Vr;
+    //Vec          ud = ctx->Ur;
+    Vec          zeta = ctx->Vorticity;
+    PetscScalar* f    = ctx->Coriolis_parameter;
+    Vec          vadvd = ctx->Vorticity_advection_by_vd;
+    Vec          b,c;
+    const double r_inv = 1.0 / earth_radius;
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (vpot, b);    
+    xder (b, ctx);
+    VecScale(b,r_inv);
+    DMGetGlobalVector (ctx->da, &c);
+    VecCopy (vpot, c);    
+    yder (c, ctx);
+    VecScale(c,r_inv);
+
+    DMGetGlobalVector (ctx->da2, &Vd);
+    VecStrideScatter (b, 0, Vd, INSERT_VALUES);
+    VecStrideScatter (c, 1, Vd, INSERT_VALUES);
+
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (zeta, b);
+
+    field_array1d_add (b, f, DMDA_Y);
+
+    horizontal_advection (b, Vd, ctx);
+    VecCopy (b, vadvd);
+    VecScale(vadvd,-1.0);
+    DMRestoreGlobalVector (ctx->da, &b);
+    DMRestoreGlobalVector (ctx->da, &c);
+    DMRestoreGlobalVector (ctx->da2, &Vd);
+}
+
 static void compute_vadvr (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     Vec          V    = ctx->Rotational_wind;
@@ -523,7 +582,6 @@ static void compute_vadvr (
     VecScale(vadvr,-1.0);
     DMRestoreGlobalVector (ctx->da, &b);
 }
-
 
 static void compute_horizontal_wind_etc (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {

@@ -345,3 +345,39 @@ extern PetscErrorCode omega_compute_rhs_F_A (
     DMDAVecRestoreArray (da, b, &a);
 
     return (0); }
+
+
+extern PetscErrorCode omega_compute_rhs_F_Vr (
+    KSP ksp, Vec b, void* ctx_p) {
+
+    Context*     ctx  = (Context*) ctx_p;
+    DM           da   = ctx->da;
+    size_t       mz   = ctx->mz;
+    PetscScalar* p    = ctx->Pressure;
+    Vec          s    = ctx->Surface_attennuation;
+    PetscScalar* f    = ctx->Coriolis_parameter;
+    Vec          vadv = ctx->Vorticity_advection_by_vr;
+    PetscScalar  hx   = ctx->hx;
+    PetscScalar  hy   = ctx->hy;
+    PetscScalar  hz   = ctx->hz;
+    PetscScalar* lat  = ctx->Latitude;
+    PetscScalar*** a;
+    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
+    const double r = earth_radius;
+
+    VecCopy(vadv,b);
+    VecScale(b,-1.0);
+
+    VecPointwiseMult(b, s, b);
+    fpder (da, mz, f, p, b);
+
+    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
+    DMDAVecGetArray(da, b, &a);
+    for (k = zs; k < zs + zm; k++) {
+        for (j = ys; j < ys + ym; j++) {
+            for (i = xs; i < xs + xm; i++) {
+                a[k][j][i] *= r * r * hx * hy * hz * cos(lat[j]); } } }
+
+    DMDAVecRestoreArray (da, b, &a);
+
+    return (0); }
