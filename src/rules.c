@@ -42,6 +42,10 @@ static void read_streamfunction (
     TARGET, Targets *, const Rules *, Context *); 
 static void compute_ur (
     TARGET, Targets *, const Rules *, Context *);
+static void compute_vr (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vadvr (
+    TARGET, Targets *, const Rules *, Context *);
 static void compute_temperature_and_tendency (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_geopotential_height_and_tendency (
@@ -245,8 +249,28 @@ Rules new_rules (void) {
                     TARGET_FIELD_STREAMFUNCTION),
                    .recipe = compute_ur},
 
+            [TARGET_FIELD_V_ROTATIONAL_WIND] =
+            (Rule){.prerequisites = new_target_list(
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_STREAMFUNCTION),
+                   .recipe = compute_vr},
 
+            [TARGET_FIELD_VORTICITY_ADVECTION_BY_VR] =
+            (Rule){.prerequisites = new_target_list(
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_STREAMFUNCTION,
+                    TARGET_FIELD_U_ROTATIONAL_WIND,
+                    TARGET_FIELD_V_ROTATIONAL_WIND),
+                   .recipe = compute_vadvr},
 
+            [TARGET_FIELD_OMEGA_VR] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_OMEGA_OPERATOR,
+                    TARGET_FIELD_VORTICITY_ADVECTION_BY_VR,
+                    TARGET_FIELD_SURFACE_ATTENNUATION,
+                    TARGET_FIELD_SIGMA_PARAMETER,
+                    TARGET_FIELD_VORTICITY),
+                   .recipe = compute_omega_component},
     }};
 
     return rules;
@@ -420,6 +444,12 @@ static void compute_omega_component (
         // KSPGetSolution (ctx->ksp, &x);
         break;
     }
+    case TARGET_FIELD_OMEGA_VR: {
+        KSPSetComputeRHS (ctx->ksp, omega_compute_rhs_F_Vr, ctx);
+        KSPSolve (ctx->ksp, 0, ctx->omega_vr);
+        // KSPGetSolution (ctx->ksp, &x);
+        break;
+    }
     default: { info ("Not implemented in compute_omega_component.\n"); }
     }
 }
@@ -450,6 +480,50 @@ static void compute_ur (
 
     DMRestoreGlobalVector (ctx->da, &b);
 }
+
+static void compute_vr (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
+    Vec          strf = ctx->Streamfunction;
+    Vec          vr = ctx->Vr;
+    Vec          b;
+    const double r_inv = 1.0 / earth_radius;
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (strf, b);    
+
+    xder (b, ctx);
+
+    VecScale(b,r_inv);
+
+    VecCopy(b,vr);
+
+    DMRestoreGlobalVector (ctx->da, &b);
+}
+
+static void compute_vadvr (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    Vec          V    = ctx->Rotational_wind;
+    Vec          vr = ctx->Vr;
+    Vec          ur = ctx->Ur;
+    Vec          zeta = ctx->Vorticity;
+    PetscScalar* f    = ctx->Coriolis_parameter;
+    Vec          vadvr = ctx->Vorticity_advection_by_vr;
+    Vec          b;
+
+    VecStrideScatter (ur, 0, V, INSERT_VALUES);
+    VecStrideScatter (vr, 1, V, INSERT_VALUES);
+
+    DMGetGlobalVector (ctx->da, &b);
+    VecCopy (zeta, b);
+
+    field_array1d_add (b, f, DMDA_Y);
+
+    horizontal_advection (b, V, ctx);
+    VecCopy (b, vadvr);
+    VecScale(vadvr,-1.0);
+    DMRestoreGlobalVector (ctx->da, &b);
+}
+
 
 static void compute_horizontal_wind_etc (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {

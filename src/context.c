@@ -58,6 +58,8 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
     VecDuplicate (ctx.Temperature, &ctx.Streamfunction);
     VecDuplicate (ctx.Temperature, &ctx.Ur);
+    VecDuplicate (ctx.Temperature, &ctx.Vr);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_by_vr);
     VecDuplicate (ctx.Temperature, &ctx.Diabatic_heating);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection);
     VecDuplicate (ctx.Temperature, &ctx.Temperature_advection);
@@ -80,6 +82,7 @@ Context new_context (Options const options, Files const files) {
 
     DMCreateGlobalVector (ctx.da2, &ctx.Horizontal_wind);
     VecDuplicate (ctx.Horizontal_wind, &ctx.Friction);
+    VecDuplicate (ctx.Horizontal_wind, &ctx.Rotational_wind);
 
     /* These are read here because they are constants throughout the
      * calculation */

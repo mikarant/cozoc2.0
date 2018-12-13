@@ -23,7 +23,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 (Target){
                     .type = TARGET_TYPE_FIELD,
                     .field =
-                    (Field){.write = false,
+                    (Field){.write = true,
                             .name  = "vadv",
                             .description =
                             "Vorticity advection",
@@ -320,6 +320,27 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .units       = "m s-1",
                                  .vec = ctx->Ur},
                          .time = options.first - 1},
+
+                [TARGET_FIELD_V_ROTATIONAL_WIND] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vr",
+                                 .description = "Rotational v wind component",
+                                 .units       = "m s-1",
+                                 .vec = ctx->Vr},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_ADVECTION_BY_VR] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vadvr",
+                                 .description = "Vorticity advection by rotational wind",
+                                 .units       = " ",
+                                 .vec = ctx->Vorticity_advection_by_vr},
+                         .time = options.first - 1},
+
 
         }};
 

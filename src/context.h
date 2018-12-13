@@ -46,6 +46,9 @@ struct Context {
     Vec          Vorticity_tendency_a;
     Vec          Streamfunction;
     Vec          Ur;
+    Vec          Vr;
+    Vec          Rotational_wind;
+    Vec          Vorticity_advection_by_vr;
 };
 
 Context new_context (Options, Files);
