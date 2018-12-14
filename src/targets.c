@@ -321,30 +321,10 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                                  .vec = ctx->Velocity_potential},
                          .time = options.first - 1},
 
-                [TARGET_FIELD_U_ROTATIONAL_WIND] =
-                (Target){.type = TARGET_TYPE_FIELD,
-                         .field =
-                         (Field){.write       = false,
-                                 .name        = "ur",
-                                 .description = "Rotational u wind component",
-                                 .units       = "m s-1",
-                                 .vec = ctx->Ur},
-                         .time = options.first - 1},
-
-                [TARGET_FIELD_V_ROTATIONAL_WIND] =
-                (Target){.type = TARGET_TYPE_FIELD,
-                         .field =
-                         (Field){.write       = false,
-                                 .name        = "vr",
-                                 .description = "Rotational v wind component",
-                                 .units       = "m s-1",
-                                 .vec = ctx->Vr},
-                         .time = options.first - 1},
-
                 [TARGET_FIELD_VORTICITY_ADVECTION_BY_VR] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "vadvr",
                                  .description = "Vorticity advection by rotational wind",
                                  .units       = " ",
@@ -367,7 +347,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_VORTICITY_ADVECTION_BY_VD] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "vadvd",
                                  .description = "Vorticity advection by divergent wind",
                                  .units       = " ",

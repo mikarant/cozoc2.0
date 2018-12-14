@@ -58,8 +58,6 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity);
     VecDuplicate (ctx.Temperature, &ctx.Streamfunction);
     VecDuplicate (ctx.Temperature, &ctx.Velocity_potential);
-    VecDuplicate (ctx.Temperature, &ctx.Ur);
-    VecDuplicate (ctx.Temperature, &ctx.Vr);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_by_vr);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_advection_by_vd);
     VecDuplicate (ctx.Temperature, &ctx.omega_vr);
@@ -135,7 +133,7 @@ ctx.Pressure);
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = 10;//min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }

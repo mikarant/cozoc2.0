@@ -46,10 +46,6 @@ static void read_streamfunction (
     TARGET, Targets *, const Rules *, Context *); 
 static void read_velocity_potential (
     TARGET, Targets *, const Rules *, Context *); 
-static void compute_ur (
-    TARGET, Targets *, const Rules *, Context *);
-static void compute_vr (
-    TARGET, Targets *, const Rules *, Context *);
 static void compute_vadvr (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_vadvd (
@@ -254,18 +250,6 @@ Rules new_rules (void) {
             [TARGET_FIELD_VELOCITY_POTENTIAL] =
             (Rule){.prerequisites = new_target_list(TARGET_FIELD_VORTICITY),
                    .recipe = read_velocity_potential},
-
-            [TARGET_FIELD_U_ROTATIONAL_WIND] =
-            (Rule){.prerequisites = new_target_list(
-                    TARGET_FIELD_VORTICITY,
-                    TARGET_FIELD_STREAMFUNCTION),
-                   .recipe = 0/*compute_ur*/},
-
-            [TARGET_FIELD_V_ROTATIONAL_WIND] =
-            (Rule){.prerequisites = new_target_list(
-                    TARGET_FIELD_VORTICITY,
-                    TARGET_FIELD_STREAMFUNCTION),
-                   .recipe = 0/*compute_vr*/},
 
             [TARGET_FIELD_VORTICITY_ADVECTION_BY_VR] =
             (Rule){.prerequisites = new_target_list(
@@ -525,44 +509,6 @@ static void read_velocity_potential (
     file_read_3d (ctx->ncid, targets->target[id].time, "VPOT", ctx->Velocity_potential);
 }
 
-
-static void compute_ur (
-    TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
-    Vec          strf = ctx->Streamfunction;
-    Vec          ur = ctx->Ur;
-    Vec          b;
-    const double r_inv = 1.0 / earth_radius;
-
-    DMGetGlobalVector (ctx->da, &b);
-    VecCopy (strf, b);    
-
-    yder (b, ctx);
-
-    VecScale(b,-1*r_inv);
-
-    VecCopy(b,ur);
-
-    DMRestoreGlobalVector (ctx->da, &b);
-}
-
-static void compute_vr (
-    TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
-    Vec          strf = ctx->Streamfunction;
-    Vec          vr = ctx->Vr;
-    Vec          b;
-    const double r_inv = 1.0 / earth_radius;
-
-    DMGetGlobalVector (ctx->da, &b);
-    VecCopy (strf, b);    
-
-    xder (b, ctx);
-
-    VecScale(b,r_inv);
-
-    VecCopy(b,vr);
-
-    DMRestoreGlobalVector (ctx->da, &b);
-}
 
 static void compute_vadvd (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
