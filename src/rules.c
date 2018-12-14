@@ -499,9 +499,6 @@ static void compute_omega_component (
 static void read_streamfunction (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx)  {
     file_read_3d (ctx->ncid, targets->target[id].time, "STRF", ctx->Streamfunction);
-//    KSPSetComputeOperators (ctx->ksp, strf_compute_operator, ctx);
-//    KSPSetComputeRHS (ctx->ksp, strf_compute_rhs_vo, ctx);
-//    KSPSolve (ctx->ksp, 0, ctx->Streamfunction);
 }
 
 static void read_velocity_potential (
@@ -514,14 +511,13 @@ static void compute_vadvd (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     Vec          vpot = ctx->Velocity_potential;
     Vec          Vd = ctx->Divergent_wind;
-    //Vec          vd = ctx->Vr;
-    //Vec          ud = ctx->Ur;
     Vec          zeta = ctx->Vorticity;
     PetscScalar* f    = ctx->Coriolis_parameter;
     Vec          vadvd = ctx->Vorticity_advection_by_vd;
     Vec          b,c;
     const double r_inv = 1.0 / earth_radius;
 
+    // Calculate u and v winds from the derivatives of velocity potential
     DMGetGlobalVector (ctx->da, &b);
     VecCopy (vpot, b);    
     xder (b, ctx);
@@ -531,16 +527,19 @@ static void compute_vadvd (
     yder (c, ctx);
     VecScale(c,r_inv);
 
+    // Insert the wind components to total wind vector
     VecStrideScatter (b, 0, Vd, INSERT_VALUES);
     VecStrideScatter (c, 1, Vd, INSERT_VALUES);
 
-
+    // calculate the advection of total vorticity
     DMGetGlobalVector (ctx->da, &b);
     VecCopy (zeta, b);
 
     field_array1d_add (b, f, DMDA_Y);
 
     horizontal_advection (b, Vd, ctx);
+
+    // scale by -1 
     VecCopy (b, vadvd);
     VecScale(vadvd,-1.0);
     DMRestoreGlobalVector (ctx->da, &b);
@@ -551,14 +550,13 @@ static void compute_vadvr (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     Vec          strf = ctx->Streamfunction;
     Vec          Vr =ctx->Rotational_wind;
-//    Vec          vr = ctx->Vr;
-//    Vec          ur = ctx->Ur;
     Vec          zeta = ctx->Vorticity;
     PetscScalar* f    = ctx->Coriolis_parameter;
     Vec          vadvr = ctx->Vorticity_advection_by_vr;
     Vec          b,c;
     const double r_inv = 1.0 / earth_radius;
 
+    // Calculate u and v winds from the derivatives of streamfunction
     DMGetGlobalVector (ctx->da, &b);
     VecCopy (strf, b);    
     yder (b, ctx);
@@ -568,15 +566,19 @@ static void compute_vadvr (
     xder (c, ctx);
     VecScale(c,r_inv);
 
+    // Insert the wind components to total wind vector
     VecStrideScatter (b, 0, Vr, INSERT_VALUES);
     VecStrideScatter (c, 1, Vr, INSERT_VALUES);
 
+    // calculate the advection of total vorticity
     DMGetGlobalVector (ctx->da, &b);
     VecCopy (zeta, b);
 
     field_array1d_add (b, f, DMDA_Y);
 
     horizontal_advection (b, Vr, ctx);
+
+    // scale by -1 
     VecCopy (b, vadvr);
     VecScale(vadvr,-1.0);
     DMRestoreGlobalVector (ctx->da, &b);
