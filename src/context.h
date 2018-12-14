@@ -49,10 +49,13 @@ struct Context {
     Vec          Ur;
     Vec          Vr;
     Vec          Rotational_wind;
+    Vec          Divergent_wind;
     Vec          Vorticity_advection_by_vr;
     Vec          Vorticity_advection_by_vd;
     Vec          omega_vr;
     Vec          omega_vd;
+    Vec          Vorticity_tendency_vr;
+    Vec          Vorticity_tendency_vd;
 };
 
 Context new_context (Options, Files);
@@ -86,7 +89,7 @@ int geopotential_height (
     Vec Ztend, Context *);
 int sigma_parameter (
     DM da, PetscInt mz, PetscScalar *p, Vec Tvec, Vec sigmavec);
-int vorticity_tendency_v (Context *);
+int vorticity_tendency_v (Context *, Vec omega, Vec V, Vec vadv, Vec vorttend);
 int vorticity_tendency_t (Context *);
 int vorticity_tendency_f (Context *);
 int vorticity_tendency_q (Context *);

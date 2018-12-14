@@ -24,6 +24,10 @@ static void compute_vorticity_tendency_q (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_vorticity_tendency_a (
     TARGET, Targets *, const Rules *, Context *);
+static void compute_vorticity_tendency_vr (
+    TARGET, Targets *, const Rules *, Context *);
+static void compute_vorticity_tendency_vd (
+    TARGET, Targets *, const Rules *, Context *);
 static void compute_vorticity_advection (
     TARGET, Targets *, const Rules *, Context *);
 static void compute_temperature_advection (
@@ -292,6 +296,22 @@ Rules new_rules (void) {
                     TARGET_FIELD_SIGMA_PARAMETER,
                     TARGET_FIELD_VORTICITY),
                    .recipe = compute_omega_component},
+
+            [TARGET_FIELD_VORTICITY_TENDENCY_VR] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_VORTICITY_ADVECTION_BY_VR,
+                    TARGET_FIELD_OMEGA_VR),
+                   .recipe = compute_vorticity_tendency_vr},
+
+            [TARGET_FIELD_VORTICITY_TENDENCY_VD] =
+            (Rule){.prerequisites = new_target_list (
+                    TARGET_FIELD_HORIZONTAL_WIND,
+                    TARGET_FIELD_VORTICITY,
+                    TARGET_FIELD_VORTICITY_ADVECTION_BY_VD,
+                    TARGET_FIELD_OMEGA_VD),
+                   .recipe = compute_vorticity_tendency_vd},
     }};
 
     return rules;
@@ -383,7 +403,8 @@ void print_target_list (
 
 static void compute_vorticity_tendency_v (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
-    vorticity_tendency_v (ctx);
+    vorticity_tendency_v (ctx, ctx->omega[GENERALIZED_OMEGA_COMPONENT_V], ctx->Horizontal_wind, 
+                          ctx->Vorticity_advection, ctx->Vorticity_tendency_v);
 }
 
 static void compute_vorticity_tendency_t (
@@ -404,6 +425,16 @@ static void compute_vorticity_tendency_q (
 static void compute_vorticity_tendency_a (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     vorticity_tendency_a (ctx);
+}
+
+static void compute_vorticity_tendency_vr (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    vorticity_tendency_v (ctx, ctx->omega_vr, ctx->Rotational_wind, ctx->Vorticity_advection_by_vr, ctx->Vorticity_tendency_vr);
+}
+
+static void compute_vorticity_tendency_vd (
+    TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
+    vorticity_tendency_v (ctx, ctx->omega_vd, ctx->Divergent_wind, ctx->Vorticity_advection_by_vd, ctx->Vorticity_tendency_vd);
 }
 
 static void compute_diabatic_heating (
@@ -536,7 +567,7 @@ static void compute_vr (
 static void compute_vadvd (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     Vec          vpot = ctx->Velocity_potential;
-    Vec          Vd;
+    Vec          Vd = ctx->Divergent_wind;
     //Vec          vd = ctx->Vr;
     //Vec          ud = ctx->Ur;
     Vec          zeta = ctx->Vorticity;
@@ -554,7 +585,6 @@ static void compute_vadvd (
     yder (c, ctx);
     VecScale(c,r_inv);
 
-    DMGetGlobalVector (ctx->da2, &Vd);
     VecStrideScatter (b, 0, Vd, INSERT_VALUES);
     VecStrideScatter (c, 1, Vd, INSERT_VALUES);
 
@@ -569,13 +599,12 @@ static void compute_vadvd (
     VecScale(vadvd,-1.0);
     DMRestoreGlobalVector (ctx->da, &b);
     DMRestoreGlobalVector (ctx->da, &c);
-    DMRestoreGlobalVector (ctx->da2, &Vd);
 }
 
 static void compute_vadvr (
     TARGET id, Targets *targets, const Rules *rules, Context *ctx) {
     Vec          strf = ctx->Streamfunction;
-    Vec          Vr;
+    Vec          Vr =ctx->Rotational_wind;
 //    Vec          vr = ctx->Vr;
 //    Vec          ur = ctx->Ur;
     Vec          zeta = ctx->Vorticity;
@@ -593,7 +622,6 @@ static void compute_vadvr (
     xder (c, ctx);
     VecScale(c,r_inv);
 
-    DMGetGlobalVector (ctx->da2, &Vr);
     VecStrideScatter (b, 0, Vr, INSERT_VALUES);
     VecStrideScatter (c, 1, Vr, INSERT_VALUES);
 
@@ -607,7 +635,6 @@ static void compute_vadvr (
     VecScale(vadvr,-1.0);
     DMRestoreGlobalVector (ctx->da, &b);
     DMRestoreGlobalVector (ctx->da, &c);
-    DMRestoreGlobalVector (ctx->da, &Vr);
 }
 
 static void compute_horizontal_wind_etc (

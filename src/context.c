@@ -79,6 +79,8 @@ Context new_context (Options const options, Files const files) {
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_f);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_q);
     VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_a);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_vr);
+    VecDuplicate (ctx.Temperature, &ctx.Vorticity_tendency_vd);
     VecDuplicate (ctx.Temperature, &ctx.Total_omega);
     for (size_t i = 0; i < NUM_GENERALIZED_OMEGA_COMPONENTS; i++) {
         VecDuplicate (ctx.Temperature, &ctx.omega[i]);
@@ -87,6 +89,7 @@ Context new_context (Options const options, Files const files) {
     DMCreateGlobalVector (ctx.da2, &ctx.Horizontal_wind);
     VecDuplicate (ctx.Horizontal_wind, &ctx.Friction);
     VecDuplicate (ctx.Horizontal_wind, &ctx.Rotational_wind);
+    VecDuplicate (ctx.Horizontal_wind, &ctx.Divergent_wind);
 
     /* These are read here because they are constants throughout the
      * calculation */
@@ -132,7 +135,7 @@ ctx.Pressure);
     ctx.hz = ctx.Pressure[1] - ctx.Pressure[0]; /* hz is negative!!! */
 
     ctx.first = max_of_size_t (0, options.first);
-    ctx.last  = 3;//min_of_size_t (options.last, ctx.mt - 1);
+    ctx.last  = min_of_size_t (options.last, ctx.mt - 1);
 
     return ctx;
 }
@@ -683,15 +686,15 @@ int calculate_static_stability (Context *ctx, Vec bvec) {
   return(0);
 }
 
-int vorticity_tendency_v (Context *ctx) {
+int vorticity_tendency_v (Context *ctx, Vec omega, Vec V, Vec vadv, Vec vorttend) {
 
   DM           da        = ctx->da;
   size_t       mz        = ctx->mz;
   PetscScalar* p         = ctx->Pressure;
   PetscScalar* f         = ctx->Coriolis_parameter;
-  Vec          vorttend  = ctx->Vorticity_tendency_v;
-  Vec          vadv      = ctx->Vorticity_advection;
-  Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_V];
+  //Vec          vorttend  = ctx->Vorticity_tendency_v;
+  //Vec          vadv      = ctx->Vorticity_advection;
+  //Vec          omega     = ctx->omega[GENERALIZED_OMEGA_COMPONENT_V];
   Vec          vort      = ctx->Vorticity;
   Vec          tmpvec, tmpvec2, tmpvec3,bvec;
 
@@ -726,7 +729,7 @@ int vorticity_tendency_v (Context *ctx) {
   VecAXPY (vorttend, 1.0, tmpvec3);
 
   // Calculate tilting term
-  tilting (tmpvec3, ctx->Horizontal_wind, omega, ctx);
+  tilting (tmpvec3, V, omega, ctx);
 
   // Add tilting term
   VecAXPY (vorttend, 1.0, tmpvec3);

@@ -304,7 +304,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_STREAMFUNCTION] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "strf",
                                  .description = "Streamfunction",
                                  .units       = "m2 s-1",
@@ -314,7 +314,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_VELOCITY_POTENTIAL] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "vpot",
                                  .description = "Velocity potential",
                                  .units       = "m2 s-1",
@@ -324,7 +324,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_U_ROTATIONAL_WIND] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "ur",
                                  .description = "Rotational u wind component",
                                  .units       = "m s-1",
@@ -334,7 +334,7 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                 [TARGET_FIELD_V_ROTATIONAL_WIND] =
                 (Target){.type = TARGET_TYPE_FIELD,
                          .field =
-                         (Field){.write       = true,
+                         (Field){.write       = false,
                                  .name        = "vr",
                                  .description = "Rotational v wind component",
                                  .units       = "m s-1",
@@ -386,6 +386,26 @@ Targets new_targets (Options options, Files files, Context *ctx) {
                         .vec =
                         ctx->omega_vd},
                     .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_TENDENCY_VR] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_vr",
+                                 .description = "Vorticity tendency due to rotational vorticity advection",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_vr},
+                         .time = options.first - 1},
+
+                [TARGET_FIELD_VORTICITY_TENDENCY_VD] =
+                (Target){.type = TARGET_TYPE_FIELD,
+                         .field =
+                         (Field){.write       = true,
+                                 .name        = "vtend_vd",
+                                 .description = "Vorticity tendency due to divergent vorticity advection",
+                                 .units       = "",
+                                 .vec = ctx->Vorticity_tendency_vd},
+                         .time = options.first - 1},
 
 
         }};
