@@ -3,7 +3,6 @@
 #include "ops.h"
 //#include "io.h"
 #include "petscdmda.h"
-#include "spherical_strf_stencil.inc"
 
 
 int field_array1d_add (
@@ -678,85 +677,5 @@ int tilting (Vec bvec, Vec Vvec, Vec omega, Context* ctx) {
     return(0);
         }
 
-extern PetscErrorCode strf_compute_operator (
-    KSP ksp, Mat A, Mat B, void* ctx_p) {
-
-    Context*             ctx = (Context*) ctx_p;
-    DM                   da  = ctx->da;
-    PetscScalar          hx  = ctx->hx;
-    PetscScalar          hy  = ctx->hy;
-    PetscScalar          hz  = ctx->hz;
-    PetscScalar*         lat   = ctx->Latitude;
-    PetscInt             my = ctx->my;
-    PetscInt             mz = ctx->mz;
-    PetscInt             n;
-    MatStencil           row, col[15];
-    PetscScalar          w[15];
-    PetscInt             xs, ys, zs, xm, ym, zm;
-    const double         r = earth_radius;
-
-    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
-
-    for (int k = zs; k < zs + zm; k++) {
-        for (int j = ys; j < ys + ym; j++) {
-            for (int i = xs; i < xs + xm; i++) {
-                row.i = i;
-                row.j = j;
-                row.k = k;
-
-                if ( k == 0 || k == mz - 1 || j == 0 || j == my - 1) {
-                    w[0] = hx * hy * hz;
-                    MatSetValuesStencil (
-                        B, 1, &row, 1, &row, w, INSERT_VALUES); }
-                else {
-                    strf_stencil (
-                        i,
-                        j,
-                        k,
-                        hx,
-                        hy,
-                        hz,
-                        r,
-                        lat,
-                        &n,
-                        col,
-                        w);
-                    MatSetValuesStencil (
-                        B, 1, &row, n, col, w, INSERT_VALUES); } } } }
-
-
-    MatAssemblyBegin (B, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd (B, MAT_FINAL_ASSEMBLY);
-
-    return (0); }
-
-extern PetscErrorCode strf_compute_rhs_vo (
-    KSP ksp, Vec b, void* ctx_p) {
-
-    Context*     ctx  = (Context*) ctx_p;
-    Vec          vo   = ctx->Vorticity;
-    DM           da   = ctx->da;
-    PetscScalar  hx   = ctx->hx;
-    PetscScalar  hy   = ctx->hy;
-    PetscScalar  hz   = ctx->hz;
-    PetscScalar* lat  = ctx->Latitude;
-    PetscScalar*** a;
-    PetscInt       i, j, k, zs, ys, xs, zm, ym, xm;
-    const double r = earth_radius;
-
-
-    VecCopy(vo,b);
-    
-    DMDAGetCorners (da, &xs, &ys, &zs, &xm, &ym, &zm);
-    DMDAVecGetArray(da, b, &a);
-    for (k = zs; k < zs + zm; k++) {
-        for (j = ys; j < ys + ym; j++) {
-            for (i = xs; i < xs + xm; i++) {
-                a[k][j][i] *= r * r * hx * hy * hz * cos(lat[j]); } } }
-
-    DMDAVecRestoreArray (da, b, &a);
-
-
-    return (0); }
 
 
